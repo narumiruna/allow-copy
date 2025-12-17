@@ -125,3 +125,38 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
     // Invalid URL, ignore
   }
 });
+
+// On extension install/update/reload, inject into already-open tabs with enabled sites
+chrome.runtime.onInstalled.addListener(async function() {
+  // Get all enabled sites
+  chrome.storage.sync.get(['sites'], async function(result) {
+    const sites = result.sites || {};
+    
+    // Get all tabs
+    const tabs = await chrome.tabs.query({});
+    
+    for (const tab of tabs) {
+      if (!tab.url) continue;
+      
+      try {
+        const urlObj = new URL(tab.url);
+        const hostname = urlObj.hostname;
+        
+        // Skip special URLs
+        if (!hostname || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+          continue;
+        }
+        
+        // Inject if site is enabled
+        if (sites[hostname] === true) {
+          await injectContentScript(tab.id);
+        }
+        
+        // Update badge
+        updateBadge(tab.id, tab.url);
+      } catch (e) {
+        // Invalid URL, skip
+      }
+    }
+  });
+});
