@@ -111,6 +111,7 @@
         -moz-user-select: text !important;
         -ms-user-select: text !important;
         user-select: text !important;
+        cursor: auto !important;
       }
     `;
     style.id = 'allow-copy-style';
