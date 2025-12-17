@@ -1,6 +1,9 @@
 # Build scripts
 create_icons.sh
 
+# Test files
+test.html
+
 # System files
 .DS_Store
 Thumbs.db
