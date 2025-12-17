@@ -72,6 +72,59 @@ After making changes:
 - **Error Handling**: `Object.defineProperty` calls wrapped in try-catch as some properties may not be configurable
 - **Compatibility**: Uses callback-based Chrome APIs with `chrome.runtime.lastError` check instead of Promise-based APIs for better compatibility
 
+## Icon Design
+
+### Design Concept
+
+The icon represents the "copy" functionality using a minimalist design of two overlapping documents.
+
+### Design Specifications
+
+- **Style**: Minimalist, clean design
+- **Colors**:
+  - Front document: `#4CAF50` (green fill) with `#2E7D32` (dark green border)
+  - Back document: White fill with `#4CAF50` (green border)
+  - Text lines: White on green background
+- **Dimensions**:
+  - Front document: 100x104px positioned at (2, 2)
+  - Back document: 100x104px positioned at (26, 22) for visible overlap
+  - Minimal margins: 2px from canvas edge
+- **Borders**: 6px stroke width for clear visibility at all sizes
+- **Border radius**: 6px for rounded corners
+
+### Files
+
+- `icon.svg` - Source vector file (128x128 viewBox)
+- `icon16.png` - 16x16 pixels (toolbar)
+- `icon48.png` - 48x48 pixels (extension management)
+- `icon128.png` - 128x128 pixels (Chrome Web Store)
+
+### Regenerating Icons
+
+If you need to modify the icon design:
+
+1. Edit `icon.svg` with your changes
+2. Run the conversion script:
+
+```bash
+python3 -c "
+import cairosvg
+
+cairosvg.svg2png(url='icon.svg', write_to='icon16.png', output_width=16, output_height=16)
+cairosvg.svg2png(url='icon.svg', write_to='icon48.png', output_width=48, output_height=48)
+cairosvg.svg2png(url='icon.svg', write_to='icon128.png', output_width=128, output_height=128)
+"
+```
+
+**Note**: Requires `cairosvg` package: `python3 -m pip install cairosvg`
+
+### Design Principles
+
+- **Clear at small sizes**: Text lines are 10px high with 5px radius to remain visible at 16x16
+- **Maximum space usage**: Documents positioned with 2px margin and 20px offset for overlap
+- **Contrast**: Green/white color scheme provides strong visual contrast
+- **Recognizable**: Two-document design universally represents copying
+
 ## File Structure
 
 ```
@@ -80,6 +133,7 @@ After making changes:
 ├── content.js         # Content script (main logic)
 ├── popup.html         # Extension popup UI
 ├── popup.js           # Popup logic
+├── icon.svg           # Icon source (vector)
 ├── icon16.png         # Extension icons
 ├── icon48.png
 └── icon128.png
