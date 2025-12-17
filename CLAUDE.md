@@ -11,18 +11,24 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 ### Core Components
 
 - **manifest.json**: Chrome extension manifest (Manifest V3)
-  - Permissions: `storage` (for settings sync), `tabs` (for messaging across tabs)
-  - Content script runs at `document_start` on `<all_urls>` with `all_frames: true`
-  - Background service worker for badge updates and tab monitoring
+  - Permissions: `storage` (for settings sync), `activeTab` (for tab access on user action), `scripting` (for dynamic content script injection), `webNavigation` (for detecting navigation events)
+  - No static content scripts - uses dynamic injection for privacy
+  - Background service worker for badge updates, tab monitoring, and content script injection
 
 - **background.js**: Background service worker
-  - Updates badge indicator when switching tabs or navigating to different pages
+  - **Content Script Injection**: Dynamically injects content script using `chrome.scripting.executeScript()` with `injectImmediately: true`
+  - Injects on enabled sites via `webNavigation.onCommitted` event for automatic functionality
+  - Prevents duplicate injection by checking for existing script with ping/pong mechanism
+  - **Badge Management**: Updates badge indicator when switching tabs or navigating to different pages
   - Shows green checkmark (✓) badge when extension is enabled for current site
   - Hides badge when extension is disabled
   - Listens to `chrome.tabs.onActivated` (tab switching), `chrome.tabs.onUpdated` (navigation), and `chrome.storage.onChanged` (settings changes)
-  - Skips badge updates for special URLs (chrome://, chrome-extension://)
+  - Skips badge updates and injection for special URLs (chrome://, chrome-extension://)
+  - On extension install/reload, injects into already-open tabs with enabled sites
 
-- **content.js**: Main functionality - injected into all web pages
+- **content.js**: Main functionality - dynamically injected into web pages
+  - **Duplicate Prevention**: Checks `window.__allowCopyInjected` flag to prevent multiple injections
+  - **Ping/Pong**: Responds to ping messages to indicate script is already injected
   - Uses capture phase (`true`) for event listeners to intercept before page handlers
   - Intercepts left-click (button === 0) events with `stopPropagation()` to prevent websites from blocking text selection
   - Blocks right-click navigation by calling `e.preventDefault()` on mousedown/mouseup/click when `button === 2`
@@ -35,6 +41,7 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
   - State management: `isEnabled` flag controls all functionality
 
 - **popup.html/popup.js**: Extension popup UI
+  - **Content Script Injection**: Injects content script when popup opens using `activeTab` permission
   - Displays current site's hostname
   - Toggle switch to enable/disable extension for the current site only
   - Uses `chrome.storage.sync` for cross-device settings persistence (per-site)
@@ -62,15 +69,37 @@ The extension uses event capturing (third parameter `true`) to intercept events 
   - Key is the hostname (e.g., `"example.com"`)
   - Value is `true` if enabled for that site
   - Sites not in the object are disabled by default
-- **Default Behavior**: Extension is disabled by default (opt-in model)
+- **Default Behavior**: Extension is disabled by default (opt-in model for privacy)
 - **Popup Behavior**:
+  - Injects content script using `activeTab` permission when opened
   - Shows current site's hostname
   - Toggle controls state only for the current site
   - Sends `toggleSite` message with hostname to the specific tab
 - **Content Script Behavior**:
+  - Prevents duplicate injection with `window.__allowCopyInjected` flag
+  - Responds to `ping` messages to indicate it's already injected
   - Reads `window.location.hostname` on load
   - Checks storage for that specific hostname
   - Only responds to `toggleSite` messages if hostname matches
+- **Background Script Behavior**:
+  - Auto-injects content script on navigation for enabled sites (via `webNavigation.onCommitted`)
+  - Uses ping/pong to check if script is already injected before injecting again
+  - Updates badge to show enabled/disabled state per site
+
+### Permission Model
+
+- **activeTab**: Grants temporary access to the current tab when user clicks extension icon
+  - Access is automatically granted when popup is opened
+  - No permission warning shown to users
+  - Access is revoked when tab is closed or navigated away
+- **scripting**: Allows dynamic injection of content scripts
+  - Required for programmatic `chrome.scripting.executeScript()` calls
+- **webNavigation**: Allows listening to navigation events
+  - Used to detect when user navigates to enabled sites
+  - Enables auto-injection on subsequent visits to enabled sites
+- **storage**: For persisting per-site settings across devices
+
+**Privacy Benefits**: This permission model avoids requesting broad `<all_urls>` access, satisfying Chrome Web Store requirements and providing better user privacy.
 
 ## Development
 
@@ -87,19 +116,35 @@ After making changes:
 1. Go to `chrome://extensions/`
 2. Click the reload icon on the extension card
 3. Reload any test web pages
-4. Use the toggle in the extension popup to verify enable/disable functionality for specific sites
-5. Test that different sites maintain independent enabled/disabled states
-6. Verify that sites default to disabled when not explicitly enabled
+4. **First-time usage**: Click extension icon to open popup and enable for the current site
+5. **Test auto-injection**: Navigate away and back to an enabled site - should work without opening popup
+6. Use the toggle in the extension popup to verify enable/disable functionality for specific sites
+7. Test that different sites maintain independent enabled/disabled states
+8. Verify that sites default to disabled when not explicitly enabled
+9. Check that the badge shows green checkmark (✓) on enabled sites
 
 ### Key Implementation Details
 
-- **Timing**: Content script runs at `document_start` to intercept restrictions before page scripts execute
+- **Dynamic Injection**: Content script is injected programmatically using `chrome.scripting.executeScript()` with `injectImmediately: true` for early timing
+- **Injection Points**: 
+  - When popup opens (via `activeTab` permission)
+  - On navigation to enabled sites (via `webNavigation.onCommitted`)
+  - On extension install/reload for already-open enabled sites
+- **Duplicate Prevention**: 
+  - Checks `window.__allowCopyInjected` flag in content script
+  - Uses ping/pong messaging in background script before injection
 - **Event Blocking**: Uses `stopPropagation()` and `stopImmediatePropagation()` to block website handlers while allowing browser's default behavior (context menu)
 - **State Reset**: Always calls `disableInteractions()` and `removeCleanup()` before enabling to ensure clean state and prevent duplicate listeners
 - **Dynamic Reapplication**: `MutationObserver` watches for style element removal and re-applies if needed
 - **Performance**: Uses `requestAnimationFrame` for waiting on DOM elements instead of intervals
 - **Error Handling**: `Object.defineProperty` calls wrapped in try-catch as some properties may not be configurable
 - **Compatibility**: Uses callback-based Chrome APIs with `chrome.runtime.lastError` check instead of Promise-based APIs for better compatibility
+
+**Note on Timing**: While `injectImmediately: true` provides early injection, it cannot fully match static `document_start` timing. However, this is acceptable because:
+- Most websites apply restrictions via JavaScript that loads later
+- Event interception works even when injected after page start
+- CSS overrides with `!important` are effective regardless of timing
+- The privacy benefits of `activeTab` outweigh the minor timing trade-off
 
 ## Icon Design
 
