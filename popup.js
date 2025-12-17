@@ -25,8 +25,12 @@ document.addEventListener('DOMContentLoaded', function() {
           chrome.tabs.sendMessage(tab.id, {
             action: 'toggleExtension',
             enabled: enabled
-          }).catch(() => {
+          }, function(response) {
             // Ignore errors for tabs that don't have content script
+            // Check chrome.runtime.lastError to suppress error messages
+            if (chrome.runtime.lastError) {
+              // Tab doesn't have content script, that's okay
+            }
           });
         });
       });

@@ -35,7 +35,8 @@ A Chrome extension that enables right-clicking and copying on websites that disa
 
 The extension uses a content script that:
 - Intercepts and stops propagation of events that websites use to disable right-clicking
-- **Prevents default behavior** on right-click to avoid conflicts with custom handlers (e.g., comic websites where right-click navigates pages)
+- **Blocks navigation on right-click** by preventing default behavior on `mousedown`/`mouseup`/`click` events when right mouse button is detected (e.g., comic websites where right-click navigates pages)
+- **Allows browser context menu** by not preventing default on `contextmenu` event
 - Overrides CSS properties that prevent text selection
 - Prevents websites from overriding browser default behaviors
 - Applies these protections at document start and maintains them dynamically
@@ -52,10 +53,10 @@ Click the extension icon in your browser toolbar to open the popup, then use the
 When enabled, the extension works automatically on all websites:
 
 1. Visit any website that normally blocks right-clicking or copying
-2. Right-click anywhere on the page - it will work!
+2. Right-click anywhere on the page - the browser's context menu will appear!
 3. Select and copy text - it will work!
 
-**Note:** The extension prevents the default right-click behavior to avoid conflicts with websites that have custom right-click handlers (e.g., comic websites where right-click navigates to previous/next page).
+**Note:** The extension blocks website navigation triggered by right-click (e.g., comic websites where right-click navigates to previous/next page) while still allowing the browser's context menu to appear.
 
 ## Privacy
 

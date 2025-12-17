@@ -11,10 +11,47 @@
 
   // Function to enable all document interactions
   function enableInteractions() {
+    // First, remove any existing listeners to avoid duplicates
+    disableInteractions();
+
+    // Block mousedown on right-click to prevent page navigation
+    const mousedownHandler = function(e) {
+      if (e.button === 2) { // Right mouse button
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        e.preventDefault(); // Prevent navigation but still allow contextmenu
+      }
+    };
+    document.addEventListener('mousedown', mousedownHandler, true);
+    eventListeners.push({ type: 'mousedown', handler: mousedownHandler });
+
+    // Block mouseup on right-click to prevent page navigation
+    const mouseupHandler = function(e) {
+      if (e.button === 2) { // Right mouse button
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        e.preventDefault(); // Prevent navigation but still allow contextmenu
+      }
+    };
+    document.addEventListener('mouseup', mouseupHandler, true);
+    eventListeners.push({ type: 'mouseup', handler: mouseupHandler });
+
+    // Block click on right-click to prevent page navigation
+    const clickHandler = function(e) {
+      if (e.button === 2) { // Right mouse button
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('click', clickHandler, true);
+    eventListeners.push({ type: 'click', handler: clickHandler });
+
     // Re-enable right-click context menu
     const contextmenuHandler = function(e) {
       e.stopPropagation();
-      e.preventDefault(); // Prevent default to avoid conflicts with custom right-click handlers
+      e.stopImmediatePropagation();
+      // Do NOT call e.preventDefault() - we want the browser's context menu to show
     };
     document.addEventListener('contextmenu', contextmenuHandler, true);
     eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
@@ -165,9 +202,12 @@
     isEnabled = enabled;
 
     if (isEnabled) {
-      // Enable interactions immediately
+      // First, ensure clean state by removing any previous setup
+      removeCleanup();
+
+      // Enable interactions immediately (this will also call disableInteractions first)
       enableInteractions();
-      
+
       // Clean up document
       cleanupDocument();
 
