@@ -26,7 +26,28 @@
     .description {
       font-size: 12px;
       color: #666;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
+    }
+
+    .site-info {
+      font-size: 11px;
+      color: #555;
+      background: #f9f9f9;
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .site-label {
+      color: #888;
+      margin-right: 5px;
+    }
+
+    .site-name {
+      font-weight: 600;
+      color: #333;
+      word-break: break-all;
     }
     
     .toggle-container {
@@ -124,13 +145,18 @@
   </div>
 
   <div class="description">
-    Enable copying and text selection on all websites
+    Enable copying and text selection on websites
+  </div>
+
+  <div class="site-info">
+    <span class="site-label">Current site:</span>
+    <span id="siteName" class="site-name">Loading...</span>
   </div>
   
   <div class="toggle-container">
-    <span class="toggle-label">Enable Extension</span>
+    <span class="toggle-label">Enable for this site</span>
     <label class="switch">
-      <input type="checkbox" id="toggleExtension" checked>
+      <input type="checkbox" id="toggleExtension">
       <span class="slider"></span>
     </label>
   </div>
@@ -140,7 +166,7 @@
   </div>
   
   <div class="info">
-    Toggle on/off to enable or disable the extension
+    Toggle to enable or disable for the current site
   </div>
   
   <script src="popup.js"></script>

@@ -225,15 +225,20 @@
   }
 
   // Load initial state from storage
-  chrome.storage.sync.get(['enabled'], function(result) {
-    const enabled = result.enabled !== false; // Default to true
+  const hostname = window.location.hostname;
+  chrome.storage.sync.get(['sites'], function(result) {
+    const sites = result.sites || {};
+    const enabled = sites[hostname] === true; // Default to false (disabled)
     initialize(enabled);
   });
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.action === 'toggleExtension') {
-      initialize(request.enabled);
+    if (request.action === 'toggleSite') {
+      // Only respond if this is the correct hostname
+      if (request.hostname === hostname) {
+        initialize(request.enabled);
+      }
     }
   });
 

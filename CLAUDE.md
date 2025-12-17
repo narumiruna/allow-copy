@@ -24,9 +24,10 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
   - State management: `isEnabled` flag controls all functionality
 
 - **popup.html/popup.js**: Extension popup UI
-  - Toggle switch to enable/disable extension
-  - Uses `chrome.storage.sync` for cross-device settings persistence
-  - Broadcasts state changes to all tabs via `chrome.tabs.sendMessage()`
+  - Displays current site's hostname
+  - Toggle switch to enable/disable extension for the current site only
+  - Uses `chrome.storage.sync` for cross-device settings persistence (per-site)
+  - Sends state changes to the current tab only via `chrome.tabs.sendMessage()`
 
 ### Event Handling Strategy
 
@@ -41,9 +42,20 @@ The extension uses event capturing (third parameter `true`) to intercept events 
 
 ### State Management
 
-- Settings stored in `chrome.storage.sync` with key `enabled` (defaults to `true`)
-- Popup broadcasts state changes to all tabs
-- Content script listens for `toggleExtension` messages from popup
+- **Per-site Settings**: Extension is enabled/disabled on a per-site basis
+- **Storage Schema**: `chrome.storage.sync` stores `{sites: {[hostname]: boolean}}`
+  - Key is the hostname (e.g., `"example.com"`)
+  - Value is `true` if enabled for that site
+  - Sites not in the object are disabled by default
+- **Default Behavior**: Extension is disabled by default (opt-in model)
+- **Popup Behavior**:
+  - Shows current site's hostname
+  - Toggle controls state only for the current site
+  - Sends `toggleSite` message with hostname to the specific tab
+- **Content Script Behavior**:
+  - Reads `window.location.hostname` on load
+  - Checks storage for that specific hostname
+  - Only responds to `toggleSite` messages if hostname matches
 
 ## Development
 
@@ -60,7 +72,9 @@ After making changes:
 1. Go to `chrome://extensions/`
 2. Click the reload icon on the extension card
 3. Reload any test web pages
-4. Use the toggle in the extension popup to verify enable/disable functionality
+4. Use the toggle in the extension popup to verify enable/disable functionality for specific sites
+5. Test that different sites maintain independent enabled/disabled states
+6. Verify that sites default to disabled when not explicitly enabled
 
 ### Key Implementation Details
 
