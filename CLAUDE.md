@@ -13,6 +13,14 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 - **manifest.json**: Chrome extension manifest (Manifest V3)
   - Permissions: `storage` (for settings sync), `tabs` (for messaging across tabs)
   - Content script runs at `document_start` on `<all_urls>` with `all_frames: true`
+  - Background service worker for badge updates and tab monitoring
+
+- **background.js**: Background service worker
+  - Updates badge indicator when switching tabs or navigating to different pages
+  - Shows green checkmark (✓) badge when extension is enabled for current site
+  - Hides badge when extension is disabled
+  - Listens to `chrome.tabs.onActivated` (tab switching), `chrome.tabs.onUpdated` (navigation), and `chrome.storage.onChanged` (settings changes)
+  - Skips badge updates for special URLs (chrome://, chrome-extension://)
 
 - **content.js**: Main functionality - injected into all web pages
   - Uses capture phase (`true`) for event listeners to intercept before page handlers
@@ -151,6 +159,7 @@ cairosvg.svg2png(url='icon.svg', write_to='icon128.png', output_width=128, outpu
 ```
 .
 ├── manifest.json      # Extension manifest
+├── background.js      # Background service worker (badge updates)
 ├── content.js         # Content script (main logic)
 ├── popup.html         # Extension popup UI
 ├── popup.js           # Popup logic
