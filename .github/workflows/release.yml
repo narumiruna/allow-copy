@@ -81,8 +81,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
       # Install crx3 for building .crx files
       - name: Install CRX builder
@@ -141,11 +139,15 @@ jobs:
           rm -f dist/key.pem
 
       - name: Generate checksums
+        id: checksums
         run: |
           cd dist
           sha256sum ${{ env.EXTENSION_NAME }}-${{ steps.tag.outputs.version }}.zip > checksums.txt
           sha256sum ${{ env.EXTENSION_NAME }}-${{ steps.tag.outputs.version }}.crx >> checksums.txt
           cat checksums.txt
+          echo "checksums<<EOF" >> $GITHUB_OUTPUT
+          cat checksums.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -180,7 +182,7 @@ jobs:
 
             ### Checksums
             ```
-            $(cat dist/checksums.txt)
+            ${{ steps.checksums.outputs.checksums }}
             ```
           files: |
             dist/${{ env.EXTENSION_NAME }}-${{ steps.tag.outputs.version }}.zip
