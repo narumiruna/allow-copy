@@ -9,11 +9,13 @@
     // Re-enable right-click context menu
     document.addEventListener('contextmenu', function(e) {
       e.stopPropagation();
+      return true;
     }, true);
 
     // Re-enable text selection
     document.addEventListener('selectstart', function(e) {
       e.stopPropagation();
+      return true;
     }, true);
 
     // Re-enable copy
@@ -23,31 +25,6 @@
 
     // Re-enable cut
     document.addEventListener('cut', function(e) {
-      e.stopPropagation();
-    }, true);
-
-    // Re-enable paste
-    document.addEventListener('paste', function(e) {
-      e.stopPropagation();
-    }, true);
-
-    // Re-enable mouse down
-    document.addEventListener('mousedown', function(e) {
-      e.stopPropagation();
-    }, true);
-
-    // Re-enable mouse up
-    document.addEventListener('mouseup', function(e) {
-      e.stopPropagation();
-    }, true);
-
-    // Re-enable key down
-    document.addEventListener('keydown', function(e) {
-      e.stopPropagation();
-    }, true);
-
-    // Re-enable key up
-    document.addEventListener('keyup', function(e) {
       e.stopPropagation();
     }, true);
   }
@@ -76,7 +53,8 @@
         }
         document.head.appendChild(style);
       } else {
-        setTimeout(addStyle, 10);
+        // Use requestAnimationFrame for better performance
+        requestAnimationFrame(addStyle);
       }
     };
     addStyle();
@@ -140,7 +118,8 @@
         subtree: false
       });
     } else {
-      setTimeout(startObserver, 10);
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(startObserver);
     }
   };
   startObserver();
