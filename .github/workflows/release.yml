@@ -21,6 +21,11 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
+    # Explicitly limit permissions for security
+    permissions:
+      contents: write  # Required for creating releases and uploading assets
+      actions: read    # Required for workflow execution
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
