@@ -20,7 +20,9 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
   - Blocks right-click navigation by calling `e.preventDefault()` on mousedown/mouseup/click when `button === 2`
   - Allows browser context menu by not preventing default on contextmenu event
   - Overrides document properties (`oncontextmenu`, `onselectstart`, etc.) using `Object.defineProperty`
-  - Injects `<style>` element (ID: `allow-copy-style`) with `!important` rules to override CSS user-select restrictions
+  - Injects `<style>` element (ID: `allow-copy-style`) with `!important` rules to override:
+    - CSS user-select restrictions (enables text selection)
+    - CSS cursor restrictions (restores normal cursor behavior - I-beam on text, pointer on links, etc.)
   - Uses `MutationObserver` to monitor and re-apply style if removed
   - State management: `isEnabled` flag controls all functionality
 
