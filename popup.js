@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const siteNameSpan = document.getElementById('siteName');
 
   // Get current tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+  chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
     if (!tabs || tabs.length === 0) {
       updateStatus(false, 'Unknown site');
       return;
@@ -18,6 +18,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display current site
     siteNameSpan.textContent = hostname;
+
+    // Inject content script if not already injected
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        files: ['content.js'],
+        injectImmediately: true
+      });
+    } catch (e) {
+      // Content script might already be injected or tab doesn't support injection
+      console.log('Content script injection skipped:', e.message);
+    }
 
     // Load saved state for this site
     chrome.storage.sync.get(['sites'], function(result) {

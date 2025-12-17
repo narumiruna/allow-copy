@@ -3,7 +3,7 @@
   "name": "Allow Copy",
   "version": "1.2.0",
   "description": "Enable copying and text selection on websites that disable these features",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "activeTab", "scripting", "webNavigation"],
   "background": {
     "service_worker": "background.js"
   },
@@ -15,14 +15,6 @@
       "128": "icon128.png"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_start",
-      "all_frames": true
-    }
-  ],
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",

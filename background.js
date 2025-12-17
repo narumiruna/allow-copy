@@ -1,5 +1,30 @@
 // Background service worker for Allow Copy extension
-// Handles badge updates when switching tabs
+// Handles badge updates and content script injection
+
+// Inject content script into a tab
+async function injectContentScript(tabId) {
+  try {
+    // Check if content script is already injected by trying to send a message
+    const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' }).catch(() => null);
+    
+    if (response && response.pong) {
+      // Content script already injected
+      return true;
+    }
+
+    // Inject the content script
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId, allFrames: true },
+      files: ['content.js'],
+      injectImmediately: true
+    });
+    
+    return true;
+  } catch (e) {
+    console.error('Failed to inject content script:', e);
+    return false;
+  }
+}
 
 // Update badge for a specific tab
 function updateBadge(tabId, url) {
@@ -24,6 +49,9 @@ function updateBadge(tabId, url) {
         // Show green badge with checkmark
         chrome.action.setBadgeText({ text: '✓', tabId: tabId });
         chrome.action.setBadgeBackgroundColor({ color: '#4CAF50', tabId: tabId });
+        
+        // Inject content script if site is enabled
+        injectContentScript(tabId);
       } else {
         // No badge for disabled sites
         chrome.action.setBadgeText({ text: '', tabId: tabId });
@@ -62,5 +90,38 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
         updateBadge(tabs[0].id, tabs[0].url);
       }
     });
+  }
+});
+
+// Listen for when popup is opened (action clicked)
+chrome.action.onClicked.addListener(function(tab) {
+  // This won't fire when popup is set, but we handle injection in popup.js
+  // Keeping this for potential future use without popup
+  injectContentScript(tab.id);
+});
+
+// Listen for navigation events to inject content script on enabled sites
+chrome.webNavigation.onCommitted.addListener(function(details) {
+  // Only handle main frame navigations
+  if (details.frameId !== 0) return;
+  
+  try {
+    const urlObj = new URL(details.url);
+    const hostname = urlObj.hostname;
+    
+    // Skip special URLs
+    if (!hostname || details.url.startsWith('chrome://') || details.url.startsWith('chrome-extension://')) {
+      return;
+    }
+    
+    // Check if site is enabled and inject if needed
+    chrome.storage.sync.get(['sites'], async function(result) {
+      const sites = result.sites || {};
+      if (sites[hostname] === true) {
+        await injectContentScript(details.tabId);
+      }
+    });
+  } catch (e) {
+    // Invalid URL, ignore
   }
 });

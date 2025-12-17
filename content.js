@@ -4,6 +4,12 @@
 (function() {
   'use strict';
 
+  // Prevent multiple injections
+  if (window.__allowCopyInjected) {
+    return;
+  }
+  window.__allowCopyInjected = true;
+
   let isEnabled = true;
   let eventListeners = [];
   let styleElement = null;
@@ -247,6 +253,12 @@
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === 'ping') {
+      // Respond to ping to indicate content script is injected
+      sendResponse({ pong: true });
+      return true;
+    }
+    
     if (request.action === 'toggleSite') {
       // Only respond if this is the correct hostname
       if (request.hostname === hostname) {
