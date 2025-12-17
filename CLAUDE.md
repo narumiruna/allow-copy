@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Chrome extension (Manifest V3) that enables right-clicking and copying on websites that disable these features. The extension bypasses JavaScript-based restrictions and CSS properties that prevent user interaction.
+A Chrome extension (Manifest V3) that enables copying and text selection on websites that disable these features. The extension bypasses JavaScript-based restrictions and CSS properties that prevent user interaction.
 
 ## Architecture
 
@@ -16,9 +16,10 @@ A Chrome extension (Manifest V3) that enables right-clicking and copying on webs
 
 - **content.js**: Main functionality - injected into all web pages
   - Uses capture phase (`true`) for event listeners to intercept before page handlers
-  - Calls `e.preventDefault()` on contextmenu to prevent conflicts with custom right-click handlers (e.g., comic sites)
+  - Blocks right-click navigation by calling `e.preventDefault()` on mousedown/mouseup/click when `button === 2`
+  - Allows browser context menu by not preventing default on contextmenu event
   - Overrides document properties (`oncontextmenu`, `onselectstart`, etc.) using `Object.defineProperty`
-  - Injects `<style>` element with `!important` rules to override CSS user-select restrictions
+  - Injects `<style>` element (ID: `allow-copy-style`) with `!important` rules to override CSS user-select restrictions
   - Uses `MutationObserver` to monitor and re-apply style if removed
   - State management: `isEnabled` flag controls all functionality
 

@@ -1,6 +1,6 @@
-# Allow Right Click
+# Allow Copy
 
-A Chrome extension that enables right-clicking and copying on websites that disable these features.
+A Chrome extension that enables copying and text selection on websites that disable these features.
 
 ## Features
 
@@ -18,7 +18,7 @@ A Chrome extension that enables right-clicking and copying on websites that disa
 
 1. Clone this repository or download the source code:
    ```bash
-   git clone https://github.com/narumiruna/allow-right-click.git
+   git clone https://github.com/narumiruna/allow-copy.git
    ```
 
 2. Open Chrome and navigate to `chrome://extensions/`
@@ -27,7 +27,7 @@ A Chrome extension that enables right-clicking and copying on websites that disa
 
 4. Click "Load unpacked" button
 
-5. Select the `allow-right-click` folder
+5. Select the `allow-copy` folder
 
 6. The extension is now installed and active!
 

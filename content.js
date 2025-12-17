@@ -1,5 +1,5 @@
-// Allow Right Click - Content Script
-// This script re-enables right-clicking, text selection, and copying on websites
+// Allow Copy - Content Script
+// This script re-enables text selection, copying, and right-clicking on websites
 
 (function() {
   'use strict';
@@ -101,13 +101,13 @@
         user-select: text !important;
       }
     `;
-    style.id = 'allow-right-click-style';
+    style.id = 'allow-copy-style';
     
     // Wait for head to exist
     const addStyle = () => {
       if (document.head) {
         // Remove existing style if present
-        const existingStyle = document.getElementById('allow-right-click-style');
+        const existingStyle = document.getElementById('allow-copy-style');
         if (existingStyle) {
           existingStyle.remove();
         }
@@ -150,14 +150,14 @@
       });
     } catch (e) {
       // Some properties might not be configurable, that's okay
-      console.log('Allow Right Click: Some properties could not be overridden');
+      console.log('Allow Copy: Some properties could not be overridden');
     }
   }
 
   // Function to remove cleanup
   function removeCleanup() {
     // Remove the style element
-    const existingStyle = document.getElementById('allow-right-click-style');
+    const existingStyle = document.getElementById('allow-copy-style');
     if (existingStyle) {
       existingStyle.remove();
     }
@@ -177,7 +177,7 @@
     // Observer to handle dynamically added content
     observer = new MutationObserver(function(mutations) {
       // Check if style was removed
-      if (isEnabled && !document.getElementById('allow-right-click-style')) {
+      if (isEnabled && !document.getElementById('allow-copy-style')) {
         cleanupDocument();
       }
     });

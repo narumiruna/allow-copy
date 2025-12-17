@@ -1,4 +1,4 @@
-// Popup script for Allow Right Click extension
+// Popup script for Allow Copy extension
 
 document.addEventListener('DOMContentLoaded', function() {
   const toggle = document.getElementById('toggleExtension');
