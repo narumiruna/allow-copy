@@ -16,6 +16,7 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 
 - **content.js**: Main functionality - injected into all web pages
   - Uses capture phase (`true`) for event listeners to intercept before page handlers
+  - Intercepts left-click (button === 0) events with `stopPropagation()` to prevent websites from blocking text selection
   - Blocks right-click navigation by calling `e.preventDefault()` on mousedown/mouseup/click when `button === 2`
   - Allows browser context menu by not preventing default on contextmenu event
   - Overrides document properties (`oncontextmenu`, `onselectstart`, etc.) using `Object.defineProperty`
@@ -32,13 +33,17 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 ### Event Handling Strategy
 
 The extension uses event capturing (third parameter `true`) to intercept events before website handlers:
-- `mousedown`, `mouseup`, `click`: When right-click is detected (`button === 2`), calls `preventDefault()` to block page navigation while still allowing contextmenu to fire
+- `mousedown`, `mouseup`, `click`: Handles both left-click (`button === 0`) and right-click (`button === 2`)
+  - **Left-click**: Calls `stopPropagation()` and `stopImmediatePropagation()` to block website handlers that prevent text selection, but does NOT call `preventDefault()` to allow normal clicks and selection to work
+  - **Right-click**: Additionally calls `preventDefault()` to block page navigation while still allowing contextmenu to fire
 - `contextmenu`: Uses `stopPropagation()` and `stopImmediatePropagation()` to block website handlers, but does NOT call `preventDefault()` so the browser's context menu can show
 - `selectstart`, `copy`, `cut`: Allows text selection and clipboard operations
 - All event listeners stored in array for cleanup when disabled
 - Before enabling, always calls `disableInteractions()` first to prevent duplicate listeners
 
-**Why multiple event types**: Some websites use `mousedown`/`mouseup` with `button === 2` check to implement navigation instead of `contextmenu` event. We must block these while allowing the browser's contextmenu to proceed.
+**Why handle left-click**: Some websites block text selection by preventing mousedown/mouseup/click events on left-click. By intercepting and stopping propagation (but not preventing default), we allow the browser's native selection to work while blocking the website's handlers.
+
+**Why handle right-click**: Some websites use `mousedown`/`mouseup` with `button === 2` check to implement navigation instead of `contextmenu` event. We must block these while allowing the browser's contextmenu to proceed.
 
 ### State Management
 

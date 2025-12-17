@@ -14,9 +14,13 @@
     // First, remove any existing listeners to avoid duplicates
     disableInteractions();
 
-    // Block mousedown on right-click to prevent page navigation
+    // Block mousedown on both left and right clicks to prevent interference
     const mousedownHandler = function(e) {
-      if (e.button === 2) { // Right mouse button
+      if (e.button === 0) { // Left mouse button - allow selection
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Do NOT preventDefault() - we want normal left-click to work
+      } else if (e.button === 2) { // Right mouse button
         e.stopPropagation();
         e.stopImmediatePropagation();
         e.preventDefault(); // Prevent navigation but still allow contextmenu
@@ -25,9 +29,13 @@
     document.addEventListener('mousedown', mousedownHandler, true);
     eventListeners.push({ type: 'mousedown', handler: mousedownHandler });
 
-    // Block mouseup on right-click to prevent page navigation
+    // Block mouseup on both left and right clicks to prevent interference
     const mouseupHandler = function(e) {
-      if (e.button === 2) { // Right mouse button
+      if (e.button === 0) { // Left mouse button - allow selection
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Do NOT preventDefault() - we want normal left-click to work
+      } else if (e.button === 2) { // Right mouse button
         e.stopPropagation();
         e.stopImmediatePropagation();
         e.preventDefault(); // Prevent navigation but still allow contextmenu
@@ -36,9 +44,13 @@
     document.addEventListener('mouseup', mouseupHandler, true);
     eventListeners.push({ type: 'mouseup', handler: mouseupHandler });
 
-    // Block click on right-click to prevent page navigation
+    // Block click on both left and right clicks to prevent interference
     const clickHandler = function(e) {
-      if (e.button === 2) { // Right mouse button
+      if (e.button === 0) { // Left mouse button - allow normal clicks
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Do NOT preventDefault() - we want normal clicks to work
+      } else if (e.button === 2) { // Right mouse button
         e.stopPropagation();
         e.stopImmediatePropagation();
         e.preventDefault();
