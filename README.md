@@ -7,8 +7,10 @@ A Chrome extension that enables right-clicking and copying on websites that disa
 - ✅ Enable right-click context menu on all websites
 - ✅ Enable text selection and copying
 - ✅ Bypass common JavaScript tricks that prevent these actions
+- ✅ Toggle on/off with a simple button in the extension popup
+- ✅ Prevents conflicts with custom right-click handlers on websites
 - ✅ Works on all websites automatically
-- ✅ No configuration needed
+- ✅ Settings are saved and synced across devices
 
 ## Installation
 
@@ -33,18 +35,27 @@ A Chrome extension that enables right-clicking and copying on websites that disa
 
 The extension uses a content script that:
 - Intercepts and stops propagation of events that websites use to disable right-clicking
+- **Prevents default behavior** on right-click to avoid conflicts with custom handlers (e.g., comic websites where right-click navigates pages)
 - Overrides CSS properties that prevent text selection
 - Prevents websites from overriding browser default behaviors
 - Applies these protections at document start and maintains them dynamically
+- Can be toggled on/off via the extension popup
 
 ## Usage
 
-Once installed, the extension works automatically on all websites. No user interaction required!
+### Toggle Extension On/Off
 
-Simply:
+Click the extension icon in your browser toolbar to open the popup, then use the toggle switch to enable or disable the extension.
+
+### Using the Extension
+
+When enabled, the extension works automatically on all websites:
+
 1. Visit any website that normally blocks right-clicking or copying
 2. Right-click anywhere on the page - it will work!
 3. Select and copy text - it will work!
+
+**Note:** The extension prevents the default right-click behavior to avoid conflicts with websites that have custom right-click handlers (e.g., comic websites where right-click navigates to previous/next page).
 
 ## Privacy
 

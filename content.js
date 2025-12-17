@@ -4,33 +4,58 @@
 (function() {
   'use strict';
 
+  let isEnabled = true;
+  let eventListeners = [];
+  let styleElement = null;
+  let observer = null;
+
   // Function to enable all document interactions
   function enableInteractions() {
     // Re-enable right-click context menu
-    document.addEventListener('contextmenu', function(e) {
+    const contextmenuHandler = function(e) {
       e.stopPropagation();
+      e.preventDefault(); // Prevent default to avoid conflicts with custom right-click handlers
       return true;
-    }, true);
+    };
+    document.addEventListener('contextmenu', contextmenuHandler, true);
+    eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
 
     // Re-enable text selection
-    document.addEventListener('selectstart', function(e) {
+    const selectstartHandler = function(e) {
       e.stopPropagation();
       return true;
-    }, true);
+    };
+    document.addEventListener('selectstart', selectstartHandler, true);
+    eventListeners.push({ type: 'selectstart', handler: selectstartHandler });
 
     // Re-enable copy
-    document.addEventListener('copy', function(e) {
+    const copyHandler = function(e) {
       e.stopPropagation();
-    }, true);
+    };
+    document.addEventListener('copy', copyHandler, true);
+    eventListeners.push({ type: 'copy', handler: copyHandler });
 
     // Re-enable cut
-    document.addEventListener('cut', function(e) {
+    const cutHandler = function(e) {
       e.stopPropagation();
-    }, true);
+    };
+    document.addEventListener('cut', cutHandler, true);
+    eventListeners.push({ type: 'cut', handler: cutHandler });
+  }
+
+  // Function to disable all interactions
+  function disableInteractions() {
+    // Remove all event listeners
+    eventListeners.forEach(({ type, handler }) => {
+      document.removeEventListener(type, handler, true);
+    });
+    eventListeners = [];
   }
 
   // Function to remove inline event handlers and styles that prevent selection
   function cleanupDocument() {
+    if (!isEnabled) return;
+
     // Remove styles that prevent text selection
     const style = document.createElement('style');
     style.textContent = `
@@ -51,7 +76,10 @@
         if (existingStyle) {
           existingStyle.remove();
         }
-        document.head.appendChild(style);
+        if (isEnabled) {
+          document.head.appendChild(style);
+          styleElement = style;
+        }
       } else {
         // Use requestAnimationFrame for better performance
         requestAnimationFrame(addStyle);
@@ -91,37 +119,84 @@
     }
   }
 
-  // Enable interactions immediately
-  enableInteractions();
-  
-  // Clean up document
-  cleanupDocument();
+  // Function to remove cleanup
+  function removeCleanup() {
+    // Remove the style element
+    const existingStyle = document.getElementById('allow-right-click-style');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    styleElement = null;
 
-  // Re-apply on DOM changes (some sites dynamically add restrictions)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', cleanupDocument);
+    // Stop observer
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
   }
 
-  // Observer to handle dynamically added content
-  const observer = new MutationObserver(function(mutations) {
-    // Check if style was removed
-    if (!document.getElementById('allow-right-click-style')) {
+  // Function to start observer
+  function startObserving() {
+    if (!isEnabled) return;
+
+    // Observer to handle dynamically added content
+    observer = new MutationObserver(function(mutations) {
+      // Check if style was removed
+      if (isEnabled && !document.getElementById('allow-right-click-style')) {
+        cleanupDocument();
+      }
+    });
+
+    // Start observing when head is available
+    const startObserver = () => {
+      if (document.head) {
+        observer.observe(document.head, {
+          childList: true,
+          subtree: false
+        });
+      } else {
+        // Use requestAnimationFrame for better performance
+        requestAnimationFrame(startObserver);
+      }
+    };
+    startObserver();
+  }
+
+  // Function to initialize extension
+  function initialize(enabled) {
+    isEnabled = enabled;
+
+    if (isEnabled) {
+      // Enable interactions immediately
+      enableInteractions();
+      
+      // Clean up document
       cleanupDocument();
+
+      // Re-apply on DOM changes (some sites dynamically add restrictions)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', cleanupDocument);
+      }
+
+      // Start observing
+      startObserving();
+    } else {
+      disableInteractions();
+      removeCleanup();
     }
+  }
+
+  // Load initial state from storage
+  chrome.storage.sync.get(['enabled'], function(result) {
+    const enabled = result.enabled !== false; // Default to true
+    initialize(enabled);
   });
 
-  // Start observing when head is available
-  const startObserver = () => {
-    if (document.head) {
-      observer.observe(document.head, {
-        childList: true,
-        subtree: false
-      });
-    } else {
-      // Use requestAnimationFrame for better performance
-      requestAnimationFrame(startObserver);
+  // Listen for messages from popup
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === 'toggleExtension') {
+      initialize(request.enabled);
     }
-  };
-  startObserver();
+  });
 
 })();
