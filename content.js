@@ -15,7 +15,6 @@
     const contextmenuHandler = function(e) {
       e.stopPropagation();
       e.preventDefault(); // Prevent default to avoid conflicts with custom right-click handlers
-      return true;
     };
     document.addEventListener('contextmenu', contextmenuHandler, true);
     eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
@@ -23,7 +22,6 @@
     // Re-enable text selection
     const selectstartHandler = function(e) {
       e.stopPropagation();
-      return true;
     };
     document.addEventListener('selectstart', selectstartHandler, true);
     eventListeners.push({ type: 'selectstart', handler: selectstartHandler });
