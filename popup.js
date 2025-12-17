@@ -27,8 +27,11 @@ document.addEventListener('DOMContentLoaded', function() {
         injectImmediately: true
       });
     } catch (e) {
-      // Content script might already be injected or tab doesn't support injection
-      console.log('Content script injection skipped:', e.message);
+      // Expected errors: script already injected, tab doesn't support injection (e.g., chrome:// URLs)
+      // Only log if it's an unexpected error
+      if (e.message && !e.message.includes('Cannot access') && !e.message.includes('duplicate')) {
+        console.log('Content script injection skipped:', e.message);
+      }
     }
 
     // Load saved state for this site

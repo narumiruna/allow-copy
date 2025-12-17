@@ -5,11 +5,15 @@
 async function injectContentScript(tabId) {
   try {
     // Check if content script is already injected by trying to send a message
-    const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' }).catch(() => null);
-    
-    if (response && response.pong) {
-      // Content script already injected
-      return true;
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+      if (response && response.pong) {
+        // Content script already injected
+        return true;
+      }
+    } catch (err) {
+      // Expected errors: no listener (script not injected), tab closed, etc.
+      // Continue to injection
     }
 
     // Inject the content script
@@ -21,7 +25,10 @@ async function injectContentScript(tabId) {
     
     return true;
   } catch (e) {
-    console.error('Failed to inject content script:', e);
+    // Log unexpected errors for debugging
+    if (e.message && !e.message.includes('Cannot access') && !e.message.includes('No tab')) {
+      console.error('Unexpected error injecting content script:', e);
+    }
     return false;
   }
 }
@@ -93,12 +100,13 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
   }
 });
 
-// Listen for when popup is opened (action clicked)
-chrome.action.onClicked.addListener(function(tab) {
-  // This won't fire when popup is set, but we handle injection in popup.js
-  // Keeping this for potential future use without popup
-  injectContentScript(tab.id);
-});
+// Note: chrome.action.onClicked does not fire when a popup is defined in the manifest.
+// If you want to use this listener, you must remove the default_popup from manifest.json
+// and handle the extension icon click manually. Keeping this commented out for reference:
+//
+// chrome.action.onClicked.addListener(function(tab) {
+//   injectContentScript(tab.id);
+// });
 
 // Listen for navigation events to inject content script on enabled sites
 chrome.webNavigation.onCommitted.addListener(function(details) {
