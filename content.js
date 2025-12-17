@@ -12,9 +12,10 @@
   // Function to enable all document interactions
   function enableInteractions() {
     // Re-enable right-click context menu
+    // stopPropagation() in capture phase prevents website handlers from blocking the event
+    // NOT calling preventDefault() allows the browser's context menu to appear
     const contextmenuHandler = function(e) {
       e.stopPropagation();
-      e.preventDefault(); // Prevent default to avoid conflicts with custom right-click handlers
     };
     document.addEventListener('contextmenu', contextmenuHandler, true);
     eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
