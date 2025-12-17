@@ -1,0 +1,1 @@
+# allow-right-click
