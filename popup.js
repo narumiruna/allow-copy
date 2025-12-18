@@ -1,89 +1,108 @@
 // Popup script for Allow Copy extension
 
-document.addEventListener('DOMContentLoaded', function() {
-  const toggle = document.getElementById('toggleExtension');
+// Update status display
+function updateStatus(enabled) {
   const statusDiv = document.getElementById('status');
-  const siteNameSpan = document.getElementById('siteName');
+  if (enabled) {
+    statusDiv.className = 'status enabled';
+    statusDiv.textContent = '✓ Enabled for this site';
+  } else {
+    statusDiv.className = 'status disabled';
+    statusDiv.textContent = '✗ Disabled for this site';
+  }
+}
 
-  // Get current tab
-  chrome.tabs.query({ active: true, currentWindow: true }, async function(tabs) {
-    if (!tabs || tabs.length === 0) {
-      updateStatus(false, 'Unknown site');
-      return;
-    }
+// Get current tab
+async function getCurrentTab() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tabs?.[0];
+}
 
-    const tab = tabs[0];
-    const url = new URL(tab.url);
-    const hostname = url.hostname;
-
-    // Display current site
-    siteNameSpan.textContent = hostname;
-
-    // Inject content script if not already injected
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        files: ['content.js'],
-        injectImmediately: true
-      });
-    } catch (e) {
-      // Expected errors: script already injected, tab doesn't support injection (e.g., chrome:// URLs)
-      // Only log if it's an unexpected error
-      if (e.message && !e.message.includes('Cannot access') && !e.message.includes('duplicate')) {
-        console.log('Content script injection skipped:', e.message);
-      }
-    }
-
-    // Load saved state for this site
-    chrome.storage.sync.get(['sites'], function(result) {
-      const sites = result.sites || {};
-      const enabled = sites[hostname] === true; // Default to false (disabled)
-      toggle.checked = enabled;
-      updateStatus(enabled, hostname);
+// Inject content script if not already injected
+async function injectContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content.js'],
+      injectImmediately: true
     });
-
-    // Listen for toggle changes
-    toggle.addEventListener('change', function() {
-      const enabled = toggle.checked;
-
-      // Load current sites object
-      chrome.storage.sync.get(['sites'], function(result) {
-        const sites = result.sites || {};
-
-        // Update this site's state
-        if (enabled) {
-          sites[hostname] = true;
-        } else {
-          delete sites[hostname]; // Remove from object to save space
-        }
-
-        // Save updated sites
-        chrome.storage.sync.set({ sites: sites }, function() {
-          updateStatus(enabled, hostname);
-
-          // Notify the current tab to update
-          chrome.tabs.sendMessage(tab.id, {
-            action: 'toggleSite',
-            hostname: hostname,
-            enabled: enabled
-          }, function(response) {
-            // Ignore errors for tabs that don't have content script
-            if (chrome.runtime.lastError) {
-              // Tab doesn't have content script, that's okay
-            }
-          });
-        });
-      });
-    });
-  });
-
-  function updateStatus(enabled, hostname) {
-    if (enabled) {
-      statusDiv.className = 'status enabled';
-      statusDiv.textContent = '✓ Enabled for this site';
-    } else {
-      statusDiv.className = 'status disabled';
-      statusDiv.textContent = '✗ Disabled for this site';
+  } catch (e) {
+    // Expected errors: script already injected, tab doesn't support injection (e.g., chrome:// URLs)
+    if (e.message && !e.message.includes('Cannot access') && !e.message.includes('duplicate')) {
+      console.log('Content script injection skipped:', e.message);
     }
   }
-});
+}
+
+// Get sites from storage
+async function getSites() {
+  const result = await chrome.storage.sync.get(['sites']);
+  return result.sites || {};
+}
+
+// Save sites to storage
+async function saveSites(sites) {
+  await chrome.storage.sync.set({ sites });
+}
+
+// Toggle site state
+async function toggleSite(tab, hostname, enabled) {
+  const sites = await getSites();
+
+  // Update this site's state
+  if (enabled) {
+    sites[hostname] = true;
+  } else {
+    delete sites[hostname]; // Remove from object to save space
+  }
+
+  // Save updated sites
+  await saveSites(sites);
+  updateStatus(enabled);
+
+  // Notify the current tab to update
+  try {
+    await chrome.tabs.sendMessage(tab.id, {
+      action: 'toggleSite',
+      hostname,
+      enabled
+    });
+  } catch (e) {
+    // Tab doesn't have content script, that's okay
+  }
+}
+
+// Initialize popup
+async function init() {
+  const toggle = document.getElementById('toggleExtension');
+  const siteNameSpan = document.getElementById('siteName');
+
+  const tab = await getCurrentTab();
+  if (!tab) {
+    updateStatus(false);
+    return;
+  }
+
+  const url = new URL(tab.url);
+  const hostname = url.hostname;
+
+  // Display current site
+  siteNameSpan.textContent = hostname;
+
+  // Inject content script if not already injected
+  await injectContentScript(tab.id);
+
+  // Load saved state for this site
+  const sites = await getSites();
+  const enabled = sites[hostname] === true; // Default to false (disabled)
+  toggle.checked = enabled;
+  updateStatus(enabled);
+
+  // Listen for toggle changes
+  toggle.addEventListener('change', () => {
+    toggleSite(tab, hostname, toggle.checked);
+  });
+}
+
+// Start when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
