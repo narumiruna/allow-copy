@@ -27,7 +27,7 @@
     'onpaste'
   ];
 
-  const RAF_MAX_ATTEMPTS = 50; // Approx 50 frames (~833ms at 60fps, could be up to ~1667ms at 30fps)
+  const RAF_MAX_ATTEMPTS = 50; // Max 50 frames. At 60fps: ~833ms, at 30fps: ~1667ms
 
   // State
   let isEnabled = true;
