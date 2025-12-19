@@ -138,34 +138,44 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
 
 // Listen for navigation events to inject content script on enabled sites
 chrome.webNavigation.onCommitted.addListener(async (details) => {
-  // Only handle main frame navigations
-  if (details.frameId !== 0) return;
+  try {
+    // Only handle main frame navigations
+    if (details.frameId !== 0) return;
 
-  const hostname = parseAndValidateUrl(details.url);
-  if (!hostname) return;
+    const hostname = parseAndValidateUrl(details.url);
+    if (!hostname) return;
 
-  const enabled = await isSiteEnabled(hostname);
+    const enabled = await isSiteEnabled(hostname);
 
-  if (enabled) {
-    await injectContentScript(details.tabId);
+    if (enabled) {
+      await injectContentScript(details.tabId);
+    }
+  } catch (e) {
+    // Error during navigation handling - log for debugging
+    console.error('Error in webNavigation.onCommitted:', e);
   }
 });
 
 // On extension install/update/reload, inject into already-open tabs with enabled sites
 chrome.runtime.onInstalled.addListener(async () => {
-  const sites = await getEnabledSites();
-  const tabs = await chrome.tabs.query({});
+  try {
+    const sites = await getEnabledSites();
+    const tabs = await chrome.tabs.query({});
 
-  for (const tab of tabs) {
-    const hostname = parseAndValidateUrl(tab.url);
-    if (!hostname) continue;
+    for (const tab of tabs) {
+      const hostname = parseAndValidateUrl(tab.url);
+      if (!hostname) continue;
 
-    // Inject if site is enabled
-    if (sites[hostname] === true) {
-      await injectContentScript(tab.id);
+      // Inject if site is enabled
+      if (sites[hostname] === true) {
+        await injectContentScript(tab.id);
+      }
+
+      // Update badge
+      await updateBadge(tab.id, tab.url);
     }
-
-    // Update badge
-    await updateBadge(tab.id, tab.url);
+  } catch (e) {
+    // Error during extension initialization - log for debugging
+    console.error('Error in runtime.onInstalled:', e);
   }
 });
