@@ -1,14 +1,56 @@
 // Background service worker for Allow Copy extension
 // Handles badge updates and content script injection
 
+// Constants
+const BADGE_CONFIG = {
+  ENABLED: {
+    text: '✓',
+    color: '#4CAF50'
+  },
+  DISABLED: {
+    text: ''
+  }
+};
+
+// Utility: Check if URL is valid for extension and return parsed hostname
+function parseAndValidateUrl(url) {
+  if (!url) return null;
+
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+
+    // Only allow http and https protocols
+    if (!hostname || (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:')) {
+      return null;
+    }
+
+    return hostname;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Utility: Get enabled sites from storage
+async function getEnabledSites() {
+  const result = await chrome.storage.sync.get(['sites']);
+  return result.sites || {};
+}
+
+// Utility: Check if site is enabled
+async function isSiteEnabled(hostname) {
+  if (!hostname) return false;
+  const sites = await getEnabledSites();
+  return sites[hostname] === true;
+}
+
 // Inject content script into a tab
 async function injectContentScript(tabId) {
   try {
     // Check if content script is already injected by trying to send a message
     try {
       const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
-      if (response && response.pong) {
-        // Content script already injected
+      if (response?.pong) {
         return true;
       }
     } catch (err) {
@@ -18,11 +60,11 @@ async function injectContentScript(tabId) {
 
     // Inject the content script
     await chrome.scripting.executeScript({
-      target: { tabId: tabId, allFrames: true },
+      target: { tabId, allFrames: true },
       files: ['content.js'],
       injectImmediately: true
     });
-    
+
     return true;
   } catch (e) {
     // Log unexpected errors for debugging
@@ -34,69 +76,67 @@ async function injectContentScript(tabId) {
 }
 
 // Update badge for a specific tab
-function updateBadge(tabId, url) {
-  if (!url) return;
+async function updateBadge(tabId, url) {
+  const hostname = parseAndValidateUrl(url);
+  
+  if (!hostname) {
+    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId });
+    return;
+  }
 
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
+  const enabled = await isSiteEnabled(hostname);
 
-    // Skip chrome:// and other special URLs
-    if (!hostname || url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
-      chrome.action.setBadgeText({ text: '', tabId: tabId });
-      return;
-    }
+  if (enabled) {
+    // Show green badge with checkmark
+    await chrome.action.setBadgeText({ text: BADGE_CONFIG.ENABLED.text, tabId });
+    await chrome.action.setBadgeBackgroundColor({ color: BADGE_CONFIG.ENABLED.color, tabId });
 
-    // Check if this site is enabled
-    chrome.storage.sync.get(['sites'], function(result) {
-      const sites = result.sites || {};
-      const enabled = sites[hostname] === true;
-
-      if (enabled) {
-        // Show green badge with checkmark
-        chrome.action.setBadgeText({ text: '✓', tabId: tabId });
-        chrome.action.setBadgeBackgroundColor({ color: '#4CAF50', tabId: tabId });
-        
-        // Inject content script if site is enabled
-        injectContentScript(tabId);
-      } else {
-        // No badge for disabled sites
-        chrome.action.setBadgeText({ text: '', tabId: tabId });
-      }
-    });
-  } catch (e) {
-    // Invalid URL, clear badge
-    chrome.action.setBadgeText({ text: '', tabId: tabId });
+    // Inject content script if site is enabled
+    await injectContentScript(tabId);
+  } else {
+    // No badge for disabled sites
+    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId });
   }
 }
 
 // Listen for tab activation (switching between tabs)
-chrome.tabs.onActivated.addListener(function(activeInfo) {
-  chrome.tabs.get(activeInfo.tabId, function(tab) {
-    if (chrome.runtime.lastError) {
-      return;
-    }
-    updateBadge(activeInfo.tabId, tab.url);
-  });
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    await updateBadge(activeInfo.tabId, tab.url);
+  } catch (e) {
+    // Tab might have been closed
+  }
 });
 
 // Listen for tab updates (URL changes, page loads)
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  // Only update when URL changes or page completes loading
-  if (changeInfo.url || changeInfo.status === 'complete') {
-    updateBadge(tabId, tab.url);
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  try {
+    // Only update when URL changes or page completes loading
+    if (changeInfo.url || changeInfo.status === 'complete') {
+      await updateBadge(tabId, tab.url);
+    }
+  } catch (e) {
+    // Error during tab update handling - log for debugging
+    console.error('Error in tabs.onUpdated:', e);
   }
 });
 
 // Listen for storage changes (when user toggles a site)
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-  if (namespace === 'sync' && changes.sites) {
-    // Update badge for current active tab
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs && tabs.length > 0) {
-        updateBadge(tabs[0].id, tabs[0].url);
+chrome.storage.onChanged.addListener(async (changes, namespace) => {
+  try {
+    if (namespace === 'sync' && changes.sites) {
+      // Update badges for all open tabs so that all windows stay in sync
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id !== null && tab.id !== undefined && tab.url) {
+          await updateBadge(tab.id, tab.url);
+        }
       }
-    });
+    }
+  } catch (e) {
+    // Error during storage change handling - log for debugging
+    console.error('Error in storage.onChanged:', e);
   }
 });
 
@@ -109,62 +149,45 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 // });
 
 // Listen for navigation events to inject content script on enabled sites
-chrome.webNavigation.onCommitted.addListener(function(details) {
-  // Only handle main frame navigations
-  if (details.frameId !== 0) return;
-  
+chrome.webNavigation.onCommitted.addListener(async (details) => {
   try {
-    const urlObj = new URL(details.url);
-    const hostname = urlObj.hostname;
-    
-    // Skip special URLs
-    if (!hostname || details.url.startsWith('chrome://') || details.url.startsWith('chrome-extension://')) {
-      return;
+    // Only handle main frame navigations
+    if (details.frameId !== 0) return;
+
+    const hostname = parseAndValidateUrl(details.url);
+    if (!hostname) return;
+
+    const enabled = await isSiteEnabled(hostname);
+
+    if (enabled) {
+      await injectContentScript(details.tabId);
     }
-    
-    // Check if site is enabled and inject if needed
-    chrome.storage.sync.get(['sites'], async function(result) {
-      const sites = result.sites || {};
-      if (sites[hostname] === true) {
-        await injectContentScript(details.tabId);
-      }
-    });
   } catch (e) {
-    // Invalid URL, ignore
+    // Error during navigation handling - log for debugging
+    console.error('Error in webNavigation.onCommitted:', e);
   }
 });
 
 // On extension install/update/reload, inject into already-open tabs with enabled sites
-chrome.runtime.onInstalled.addListener(async function() {
-  // Get all enabled sites
-  chrome.storage.sync.get(['sites'], async function(result) {
-    const sites = result.sites || {};
-    
-    // Get all tabs
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    const sites = await getEnabledSites();
     const tabs = await chrome.tabs.query({});
-    
+
     for (const tab of tabs) {
-      if (!tab.url) continue;
-      
-      try {
-        const urlObj = new URL(tab.url);
-        const hostname = urlObj.hostname;
-        
-        // Skip special URLs
-        if (!hostname || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
-          continue;
-        }
-        
-        // Inject if site is enabled
-        if (sites[hostname] === true) {
-          await injectContentScript(tab.id);
-        }
-        
-        // Update badge
-        updateBadge(tab.id, tab.url);
-      } catch (e) {
-        // Invalid URL, skip
+      const hostname = parseAndValidateUrl(tab.url);
+      if (!hostname) continue;
+
+      // Inject if site is enabled
+      if (sites[hostname] === true) {
+        await injectContentScript(tab.id);
       }
+
+      // Update badge
+      await updateBadge(tab.id, tab.url);
     }
-  });
+  } catch (e) {
+    // Error during extension initialization - log for debugging
+    console.error('Error in runtime.onInstalled:', e);
+  }
 });

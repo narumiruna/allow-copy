@@ -10,90 +10,79 @@
   }
   window.__allowCopyInjected = true;
 
+  // Constants
+  const MOUSE_BUTTON = {
+    LEFT: 0,
+    MIDDLE: 1,
+    RIGHT: 2
+  };
+
+  const STYLE_ID = 'allow-copy-style';
+
+  const DOCUMENT_PROPERTIES = [
+    'oncontextmenu',
+    'onselectstart',
+    'oncopy',
+    'oncut',
+    'onpaste'
+  ];
+
+  // State
   let isEnabled = true;
   let eventListeners = [];
   let styleElement = null;
   let observer = null;
+
+  // Create unified mouse event handler
+  function createMouseEventHandler() {
+    return function(e) {
+      if (e.button === MOUSE_BUTTON.LEFT) {
+        // Left mouse button - allow selection and normal clicks
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Do NOT preventDefault() - we want normal left-click to work
+      } else if (e.button === MOUSE_BUTTON.RIGHT) {
+        // Right mouse button - block navigation but allow contextmenu
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    };
+  }
+
+  // Create simple event handler that only stops propagation
+  function createStopPropagationHandler() {
+    return function(e) {
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+  }
 
   // Function to enable all document interactions
   function enableInteractions() {
     // First, remove any existing listeners to avoid duplicates
     disableInteractions();
 
-    // Block mousedown on both left and right clicks to prevent interference
-    const mousedownHandler = function(e) {
-      if (e.button === 0) { // Left mouse button - allow selection
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        // Do NOT preventDefault() - we want normal left-click to work
-      } else if (e.button === 2) { // Right mouse button
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        e.preventDefault(); // Prevent navigation but still allow contextmenu
-      }
-    };
-    document.addEventListener('mousedown', mousedownHandler, true);
-    eventListeners.push({ type: 'mousedown', handler: mousedownHandler });
+    // Mouse events (mousedown, mouseup, click) - reuse single handler
+    const mouseEvents = ['mousedown', 'mouseup', 'click'];
+    const mouseHandler = createMouseEventHandler();
+    mouseEvents.forEach(eventType => {
+      document.addEventListener(eventType, mouseHandler, true);
+      eventListeners.push({ type: eventType, handler: mouseHandler });
+    });
 
-    // Block mouseup on both left and right clicks to prevent interference
-    const mouseupHandler = function(e) {
-      if (e.button === 0) { // Left mouse button - allow selection
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        // Do NOT preventDefault() - we want normal left-click to work
-      } else if (e.button === 2) { // Right mouse button
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        e.preventDefault(); // Prevent navigation but still allow contextmenu
-      }
-    };
-    document.addEventListener('mouseup', mouseupHandler, true);
-    eventListeners.push({ type: 'mouseup', handler: mouseupHandler });
-
-    // Block click on both left and right clicks to prevent interference
-    const clickHandler = function(e) {
-      if (e.button === 0) { // Left mouse button - allow normal clicks
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        // Do NOT preventDefault() - we want normal clicks to work
-      } else if (e.button === 2) { // Right mouse button
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        e.preventDefault();
-      }
-    };
-    document.addEventListener('click', clickHandler, true);
-    eventListeners.push({ type: 'click', handler: clickHandler });
-
-    // Re-enable right-click context menu
-    const contextmenuHandler = function(e) {
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      // Do NOT call e.preventDefault() - we want the browser's context menu to show
-    };
+    // Context menu event - reuse single handler
+    const contextmenuHandler = createStopPropagationHandler();
     document.addEventListener('contextmenu', contextmenuHandler, true);
     eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
 
-    // Re-enable text selection
-    const selectstartHandler = function(e) {
-      e.stopPropagation();
-    };
-    document.addEventListener('selectstart', selectstartHandler, true);
-    eventListeners.push({ type: 'selectstart', handler: selectstartHandler });
-
-    // Re-enable copy
-    const copyHandler = function(e) {
-      e.stopPropagation();
-    };
-    document.addEventListener('copy', copyHandler, true);
-    eventListeners.push({ type: 'copy', handler: copyHandler });
-
-    // Re-enable cut
-    const cutHandler = function(e) {
-      e.stopPropagation();
-    };
-    document.addEventListener('cut', cutHandler, true);
-    eventListeners.push({ type: 'cut', handler: cutHandler });
+    // Text selection and clipboard events - reuse single handler
+    const textEvents = ['selectstart', 'copy', 'cut'];
+    const textEventsHandler = (e) => e.stopPropagation();
+    textEvents.forEach(eventType => {
+      document.addEventListener(eventType, textEventsHandler, true);
+      eventListeners.push({ type: eventType, handler: textEventsHandler });
+    });
   }
 
   // Function to disable all interactions
@@ -105,11 +94,10 @@
     eventListeners = [];
   }
 
-  // Function to remove inline event handlers and styles that prevent selection
-  function cleanupDocument() {
+  // Function to inject CSS that enables text selection
+  function injectStyle() {
     if (!isEnabled) return;
 
-    // Remove styles that prevent text selection
     const style = document.createElement('style');
     style.textContent = `
       * {
@@ -120,13 +108,13 @@
         cursor: auto !important;
       }
     `;
-    style.id = 'allow-copy-style';
-    
+    style.id = STYLE_ID;
+
     // Wait for head to exist
     const addStyle = () => {
       if (document.head) {
         // Remove existing style if present
-        const existingStyle = document.getElementById('allow-copy-style');
+        const existingStyle = document.getElementById(STYLE_ID);
         if (existingStyle) {
           existingStyle.remove();
         }
@@ -135,48 +123,38 @@
           styleElement = style;
         }
       } else {
-        // Use requestAnimationFrame for better performance
         requestAnimationFrame(addStyle);
       }
     };
     addStyle();
+  }
 
-    // Override common JavaScript properties used to disable right-click
-    try {
-      Object.defineProperty(document, 'oncontextmenu', {
-        get: function() { return null; },
-        set: function() { }
-      });
-      
-      Object.defineProperty(document, 'onselectstart', {
-        get: function() { return null; },
-        set: function() { }
-      });
-      
-      Object.defineProperty(document, 'oncopy', {
-        get: function() { return null; },
-        set: function() { }
-      });
-      
-      Object.defineProperty(document, 'oncut', {
-        get: function() { return null; },
-        set: function() { }
-      });
-      
-      Object.defineProperty(document, 'onpaste', {
-        get: function() { return null; },
-        set: function() { }
-      });
-    } catch (e) {
-      // Some properties might not be configurable, that's okay
-      console.log('Allow Copy: Some properties could not be overridden');
-    }
+  // Function to override document properties
+  function overrideDocumentProperties() {
+    DOCUMENT_PROPERTIES.forEach(prop => {
+      try {
+        Object.defineProperty(document, prop, {
+          get: () => null,
+          set: () => {}
+        });
+      } catch (e) {
+        // Some properties might not be configurable
+      }
+    });
+  }
+
+  // Function to remove inline event handlers and styles that prevent selection
+  function cleanupDocument() {
+    if (!isEnabled) return;
+
+    injectStyle();
+    overrideDocumentProperties();
   }
 
   // Function to remove cleanup
   function removeCleanup() {
     // Remove the style element
-    const existingStyle = document.getElementById('allow-copy-style');
+    const existingStyle = document.getElementById(STYLE_ID);
     if (existingStyle) {
       existingStyle.remove();
     }
@@ -194,10 +172,10 @@
     if (!isEnabled) return;
 
     // Observer to handle dynamically added content
-    observer = new MutationObserver(function(mutations) {
-      // Check if style was removed
-      if (isEnabled && !document.getElementById('allow-copy-style')) {
-        cleanupDocument();
+    observer = new MutationObserver(() => {
+      // Check if style was removed and re-inject if needed
+      if (!document.getElementById(STYLE_ID)) {
+        injectStyle();
       }
     });
 
@@ -209,7 +187,6 @@
           subtree: false
         });
       } else {
-        // Use requestAnimationFrame for better performance
         requestAnimationFrame(startObserver);
       }
     };
@@ -245,25 +222,23 @@
 
   // Load initial state from storage
   const hostname = window.location.hostname;
-  chrome.storage.sync.get(['sites'], function(result) {
+  chrome.storage.sync.get(['sites'], (result) => {
     const sites = result.sites || {};
     const enabled = sites[hostname] === true; // Default to false (disabled)
     initialize(enabled);
   });
 
   // Listen for messages from popup
-  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'ping') {
       // Respond to ping to indicate content script is injected
       sendResponse({ pong: true });
       return true;
     }
-    
-    if (request.action === 'toggleSite') {
-      // Only respond if this is the correct hostname
-      if (request.hostname === hostname) {
-        initialize(request.enabled);
-      }
+
+    if (request.action === 'toggleSite' && request.hostname === hostname) {
+      initialize(request.enabled);
+      return true;
     }
   });
 
