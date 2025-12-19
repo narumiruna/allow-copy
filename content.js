@@ -13,6 +13,7 @@
   // Constants
   const MOUSE_BUTTON = {
     LEFT: 0,
+    MIDDLE: 1,
     RIGHT: 2
   };
 
@@ -62,7 +63,7 @@
     // First, remove any existing listeners to avoid duplicates
     disableInteractions();
 
-    // Mouse events (mousedown, mouseup, click)
+    // Mouse events (mousedown, mouseup, click) - reuse single handler
     const mouseEvents = ['mousedown', 'mouseup', 'click'];
     const mouseHandler = createMouseEventHandler();
     mouseEvents.forEach(eventType => {
@@ -70,18 +71,17 @@
       eventListeners.push({ type: eventType, handler: mouseHandler });
     });
 
-    // Context menu event
+    // Context menu event - reuse single handler
     const contextmenuHandler = createStopPropagationHandler();
     document.addEventListener('contextmenu', contextmenuHandler, true);
     eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler });
 
-    // Text selection and clipboard events
+    // Text selection and clipboard events - reuse single handler
     const textEvents = ['selectstart', 'copy', 'cut'];
     const textEventsHandler = (e) => e.stopPropagation();
     textEvents.forEach(eventType => {
-      const handler = textEventsHandler;
-      document.addEventListener(eventType, handler, true);
-      eventListeners.push({ type: eventType, handler });
+      document.addEventListener(eventType, textEventsHandler, true);
+      eventListeners.push({ type: eventType, handler: textEventsHandler });
     });
   }
 
@@ -173,7 +173,7 @@
 
     // Observer to handle dynamically added content
     observer = new MutationObserver(() => {
-      // Check if style was removed
+      // Check if style was removed and re-inject if needed
       if (!document.getElementById(STYLE_ID)) {
         injectStyle();
       }

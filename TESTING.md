@@ -71,7 +71,7 @@ Test that the following sites are properly skipped (no crashes):
 
 ## Final Pre-Review Checklist
 
-- [ ] Code has no console.error (except necessary error handling)
+- [ ] Console logging follows policy: console.error only for real/unexpected errors, console.log for expected informational messages, no leftover debug logs
 - [ ] All files use UTF-8 encoding
 - [ ] No obfuscated code
 - [ ] README.md content is complete and accurate
