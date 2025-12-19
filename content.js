@@ -174,7 +174,7 @@
     // Observer to handle dynamically added content
     observer = new MutationObserver(() => {
       // Check if style was removed
-      if (isEnabled && !document.getElementById(STYLE_ID)) {
+      if (!document.getElementById(STYLE_ID)) {
         injectStyle();
       }
     });
@@ -238,6 +238,7 @@
 
     if (request.action === 'toggleSite' && request.hostname === hostname) {
       initialize(request.enabled);
+      return true;
     }
   });
 
