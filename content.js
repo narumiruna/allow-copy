@@ -33,7 +33,7 @@
   let observer = null;
 
   // Create unified mouse event handler
-  function createMouseEventHandler(eventType) {
+  function createMouseEventHandler() {
     return function(e) {
       if (e.button === MOUSE_BUTTON.LEFT) {
         // Left mouse button - allow selection and normal clicks
@@ -64,10 +64,10 @@
 
     // Mouse events (mousedown, mouseup, click)
     const mouseEvents = ['mousedown', 'mouseup', 'click'];
+    const mouseHandler = createMouseEventHandler();
     mouseEvents.forEach(eventType => {
-      const handler = createMouseEventHandler(eventType);
-      document.addEventListener(eventType, handler, true);
-      eventListeners.push({ type: eventType, handler });
+      document.addEventListener(eventType, mouseHandler, true);
+      eventListeners.push({ type: eventType, handler: mouseHandler });
     });
 
     // Context menu event
