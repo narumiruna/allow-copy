@@ -129,7 +129,7 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
       // Update badges for all open tabs so that all windows stay in sync
       const tabs = await chrome.tabs.query({});
       for (const tab of tabs) {
-        if (tab && tab.id != null && tab.url) {
+        if (tab && tab.id !== null && tab.id !== undefined && tab.url) {
           await updateBadge(tab.id, tab.url);
         }
       }
