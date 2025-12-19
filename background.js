@@ -92,6 +92,10 @@ async function updateBadge(tabId, url) {
   }
 
   const hostname = getHostname(url);
+  if (!hostname) {
+    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId });
+    return;
+  }
   const enabled = await isSiteEnabled(hostname);
 
   if (enabled) {
