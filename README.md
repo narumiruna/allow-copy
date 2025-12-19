@@ -85,6 +85,68 @@ This extension follows privacy-first principles:
 
 The extension only modifies page behavior in your local browser and never shares information externally.
 
+## Development
+
+### Building for Chrome Web Store
+
+To create a zip file for Chrome Web Store submission:
+
+```bash
+make zip      # Creates allow-copy-<version>.zip with all required files
+make clean    # Removes generated zip files
+make help     # Shows available commands
+```
+
+The version number is automatically extracted from `manifest.json`.
+
+### Testing Changes
+
+After making changes to the code:
+
+1. Go to `chrome://extensions/`
+2. Click the reload icon on the extension card
+3. Reload any test web pages
+4. Click the extension icon to open the popup and enable it for the test site
+5. Test that the functionality works (right-click, text selection, copying)
+6. Navigate away and back to verify auto-injection on enabled sites
+7. Test the toggle switch to verify enable/disable functionality
+8. Check that the badge shows a green checkmark (✓) on enabled sites
+
+### Technical Architecture
+
+**Manifest V3 Chrome Extension** with dynamic content script injection:
+
+- **manifest.json**: Extension configuration with `activeTab`, `storage`, `scripting`, and `webNavigation` permissions
+- **background.js**: Service worker that manages badge updates, tab monitoring, and content script injection
+  - Auto-injects content script on navigation for enabled sites
+  - Updates badge indicator when switching tabs or navigating
+  - Prevents duplicate injection with ping/pong mechanism
+- **content.js**: Main functionality script injected into web pages
+  - Intercepts mouse events in capture phase to prevent website handlers
+  - Handles left-click (stops propagation to allow text selection)
+  - Handles right-click (prevents navigation while allowing context menu)
+  - Overrides CSS properties that disable text selection
+  - Uses MutationObserver to maintain style overrides
+- **popup.html/popup.js**: UI for toggling extension per-site
+
+### File Structure
+
+```
+.
+├── manifest.json      # Extension manifest (Manifest V3)
+├── background.js      # Background service worker
+├── content.js         # Content script (main functionality)
+├── popup.html         # Extension popup UI
+├── popup.js           # Popup logic and state management
+├── icon.svg           # Icon source (vector)
+├── icon16.png         # 16x16 toolbar icon
+├── icon48.png         # 48x48 extension management icon
+├── icon128.png        # 128x128 Chrome Web Store icon
+├── Makefile           # Build automation
+├── README.md          # This file
+└── CLAUDE.md          # Detailed technical documentation
+```
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) file for details
@@ -92,3 +154,5 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Contributing
 
 Issues and pull requests are welcome!
+
+For detailed technical documentation, see [CLAUDE.md](CLAUDE.md).
