@@ -77,8 +77,9 @@
 
     // Text selection and clipboard events
     const textEvents = ['selectstart', 'copy', 'cut'];
+    const textEventsHandler = (e) => e.stopPropagation();
     textEvents.forEach(eventType => {
-      const handler = (e) => e.stopPropagation();
+      const handler = textEventsHandler;
       document.addEventListener(eventType, handler, true);
       eventListeners.push({ type: eventType, handler });
     });
