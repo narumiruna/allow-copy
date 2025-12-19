@@ -1,6 +1,9 @@
 # Build scripts
 create_icons.sh
 
+# Distribution files
+*.zip
+
 # Test files
 test.html
 

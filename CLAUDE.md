@@ -103,6 +103,18 @@ The extension uses event capturing (third parameter `true`) to intercept events 
 
 ## Development
 
+### Building for Chrome Web Store
+
+To create a zip file for Chrome Web Store submission:
+
+```bash
+make zip      # Creates allow-copy-<version>.zip with all required files
+make clean    # Removes generated zip files
+make help     # Shows available commands
+```
+
+The version number is automatically extracted from `manifest.json`. The zip file includes only the necessary files for the extension (excludes development files like README.md, CLAUDE.md, TESTING.md, .git, etc.).
+
 ### Loading the Extension
 
 1. Navigate to `chrome://extensions/`
