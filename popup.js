@@ -50,44 +50,59 @@ async function saveSites(sites) {
   await chrome.storage.sync.set({ sites });
 }
 
-// Toggle site state (with lock to prevent race conditions)
-let toggleInProgress = false;
+// Queue-based toggle to prevent race conditions without busy-waiting
+const toggleQueue = [];
+let processingQueue = false;
+
+async function processToggleQueue() {
+  if (processingQueue || toggleQueue.length === 0) {
+    return;
+  }
+  
+  processingQueue = true;
+  
+  while (toggleQueue.length > 0) {
+    const { tab, hostname, enabled, resolve, reject } = toggleQueue.shift();
+    
+    try {
+      const sites = await getSites();
+
+      // Update this site's state
+      if (enabled) {
+        sites[hostname] = true;
+      } else {
+        delete sites[hostname]; // Remove from object to save space
+      }
+
+      // Save updated sites
+      await saveSites(sites);
+      updateStatus(enabled);
+
+      // Notify the current tab to update
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'toggleSite',
+          hostname,
+          enabled
+        });
+      } catch (e) {
+        // Tab doesn't have content script, that's okay
+      }
+      
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  }
+  
+  processingQueue = false;
+}
 
 async function toggleSite(tab, hostname, enabled) {
-  // Wait if another toggle is in progress
-  while (toggleInProgress) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-  
-  toggleInProgress = true;
-  
-  try {
-    const sites = await getSites();
-
-    // Update this site's state
-    if (enabled) {
-      sites[hostname] = true;
-    } else {
-      delete sites[hostname]; // Remove from object to save space
-    }
-
-    // Save updated sites
-    await saveSites(sites);
-    updateStatus(enabled);
-
-    // Notify the current tab to update
-    try {
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'toggleSite',
-        hostname,
-        enabled
-      });
-    } catch (e) {
-      // Tab doesn't have content script, that's okay
-    }
-  } finally {
-    toggleInProgress = false;
-  }
+  return new Promise((resolve, reject) => {
+    toggleQueue.push({ tab, hostname, enabled, resolve, reject });
+    processToggleQueue();
+  });
 }
 
 // Initialize popup
