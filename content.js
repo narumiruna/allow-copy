@@ -27,6 +27,8 @@
     'onpaste'
   ];
 
+  const RAF_MAX_ATTEMPTS = 50; // Approx 50 frames (~833ms at 60fps, could be up to ~1667ms at 30fps)
+
   // State
   let isEnabled = true;
   let eventListeners = [];
@@ -113,7 +115,6 @@
 
     // Wait for head to exist with timeout fallback
     let attempts = 0;
-    const maxAttempts = 50; // Max 50 * 20ms = 1 second
     
     const addStyle = () => {
       if (document.head) {
@@ -128,10 +129,10 @@
         }
       } else {
         attempts++;
-        if (attempts < maxAttempts) {
+        if (attempts < RAF_MAX_ATTEMPTS) {
           requestAnimationFrame(addStyle);
         } else {
-          // Fallback: document.head not available after 1 second, give up
+          // Fallback: document.head not available after timeout, give up
           console.log('Allow Copy: document.head not available, skipping style injection');
         }
       }
@@ -207,7 +208,6 @@
 
     // Start observing when head is available with timeout fallback
     let attempts = 0;
-    const maxAttempts = 50; // Max 50 * 20ms = 1 second
     
     const startObserver = () => {
       if (document.head) {
@@ -217,10 +217,10 @@
         });
       } else {
         attempts++;
-        if (attempts < maxAttempts) {
+        if (attempts < RAF_MAX_ATTEMPTS) {
           requestAnimationFrame(startObserver);
         } else {
-          // Fallback: document.head not available after 1 second, give up
+          // Fallback: document.head not available after timeout, give up
           console.log('Allow Copy: document.head not available, skipping observer setup');
         }
       }
