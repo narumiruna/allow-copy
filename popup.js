@@ -83,8 +83,20 @@ async function init() {
     return;
   }
 
-  const url = new URL(tab.url);
-  const hostname = url.hostname;
+  let hostname;
+  try {
+    if (!tab.url) {
+      throw new Error('Missing tab URL');
+    }
+    const url = new URL(tab.url);
+    hostname = url.hostname;
+  } catch (e) {
+    console.error('Unable to parse tab URL in popup:', e);
+    updateStatus(false);
+    siteNameSpan.textContent = 'Unknown site';
+    toggle.disabled = true;
+    return;
+  }
 
   // Display current site
   siteNameSpan.textContent = hostname;
