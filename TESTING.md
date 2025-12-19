@@ -1,84 +1,84 @@
 # Testing Checklist for Allow Copy Extension
 
-## 基本功能測試
+## Basic Functionality Tests
 
-### 1. 安裝和首次使用
-- [ ] 在 `chrome://extensions/` 載入擴充功能
-- [ ] 擴充功能圖示顯示在工具列
-- [ ] 點擊圖示開啟 popup，顯示正確內容
+### 1. Installation and First Use
+- [ ] Load extension at `chrome://extensions/`
+- [ ] Extension icon appears in toolbar
+- [ ] Click icon to open popup, verify correct content displays
 
-### 2. 啟用/停用功能
-- [ ] 開啟 popup，看到當前網站 hostname
-- [ ] 切換開關為 ON，看到綠色勾選 badge
-- [ ] 切換開關為 OFF，badge 消失
-- [ ] 重新載入頁面，設定保持不變
+### 2. Enable/Disable Functionality
+- [ ] Open popup, verify current site hostname is shown
+- [ ] Toggle switch to ON, verify green checkmark badge appears
+- [ ] Toggle switch to OFF, verify badge disappears
+- [ ] Reload page, verify settings persist
 
-### 3. 文本選擇功能
-測試網站建議：
-- https://www.hongxiu.com/ (禁止複製的中文小說網站)
-- 其他禁止右鍵/複製的網站
+### 3. Text Selection Functionality
+Suggested test sites:
+- https://www.hongxiu.com/ (Chinese novel site that blocks copying)
+- Other sites that disable right-click/copying
 
-測試項目：
-- [ ] 啟用擴充功能前無法選擇文本
-- [ ] 啟用擴充功能後可以選擇文本
-- [ ] 可以使用右鍵選單
-- [ ] 可以複製文本（Ctrl+C 或右鍵複製）
-- [ ] 左鍵點擊連結正常工作
-- [ ] 右鍵不會觸發頁面導航
+Test items:
+- [ ] Cannot select text before enabling extension
+- [ ] Can select text after enabling extension
+- [ ] Can use right-click context menu
+- [ ] Can copy text (Ctrl+C or right-click copy)
+- [ ] Left-click on links works normally
+- [ ] Right-click does not trigger page navigation
 
-### 4. 自動注入測試
-- [ ] 在已啟用的網站上關閉 tab
-- [ ] 重新開啟相同網站
-- [ ] 功能自動生效（無需重新開啟 popup）
-- [ ] Badge 自動顯示為綠色勾選
+### 4. Auto-Injection Test
+- [ ] Close tab on an enabled site
+- [ ] Reopen same site
+- [ ] Functionality works automatically (without reopening popup)
+- [ ] Badge automatically shows green checkmark
 
-### 5. 多網站測試
-- [ ] 在網站 A 啟用擴充功能
-- [ ] 切換到網站 B（未啟用）
-- [ ] 確認網站 B 無 badge，功能未啟用
-- [ ] 切換回網站 A
-- [ ] 確認網站 A 有 badge，功能正常
+### 5. Multi-Site Test
+- [ ] Enable extension on site A
+- [ ] Switch to site B (not enabled)
+- [ ] Verify site B has no badge, functionality not enabled
+- [ ] Switch back to site A
+- [ ] Verify site A has badge, functionality works
 
-### 6. 特殊網站測試
-測試以下網站應正常跳過（不會崩潰）：
+### 6. Special Sites Test
+Test that the following sites are properly skipped (no crashes):
 - [ ] `chrome://extensions/`
 - [ ] `chrome://settings/`
 - [ ] Chrome Web Store
-- [ ] 新分頁 (New Tab)
+- [ ] New Tab page
 
-### 7. 設定同步測試（如果有多個裝置）
-- [ ] 在裝置 A 啟用某網站
-- [ ] 等待同步完成
-- [ ] 在裝置 B 檢查相同網站
-- [ ] 確認設定已同步
+### 7. Settings Sync Test (if you have multiple devices)
+- [ ] Enable a site on device A
+- [ ] Wait for sync to complete
+- [ ] Check same site on device B
+- [ ] Verify settings have synced
 
-### 8. 效能測試
-- [ ] 開啟擴充功能後頁面載入速度正常
-- [ ] 沒有明顯的延遲或卡頓
-- [ ] 瀏覽器記憶體使用正常
+### 8. Performance Test
+- [ ] Page load speed is normal after enabling extension
+- [ ] No noticeable delays or lag
+- [ ] Browser memory usage is normal
 
-### 9. 錯誤處理測試
-- [ ] 在頁面載入完成前快速切換 tab
-- [ ] 快速重複開關擴充功能
-- [ ] 在受保護的頁面嘗試啟用（應該優雅地失敗）
+### 9. Error Handling Test
+- [ ] Quickly switch tabs before page finishes loading
+- [ ] Rapidly toggle extension on/off
+- [ ] Try to enable on protected pages (should fail gracefully)
 
-### 10. 更新測試
-- [ ] 更新 manifest.json 版本號
-- [ ] 重新載入擴充功能
-- [ ] 確認已啟用的網站清單保持不變
-- [ ] 確認功能正常
+### 10. Update Test
+- [ ] Update version number in manifest.json
+- [ ] Reload extension
+- [ ] Verify list of enabled sites remains unchanged
+- [ ] Verify functionality works normally
 
-## 審核前最終檢查
+## Final Pre-Review Checklist
 
-- [ ] 代碼無 console.error（除非必要的錯誤處理）
-- [ ] 所有檔案使用 UTF-8 編碼
-- [ ] 沒有混淆代碼
-- [ ] README.md 內容完整且準確
-- [ ] manifest.json 版本號已更新
-- [ ] 所有圖示檔案存在且正確
+- [ ] Code has no console.error (except necessary error handling)
+- [ ] All files use UTF-8 encoding
+- [ ] No obfuscated code
+- [ ] README.md content is complete and accurate
+- [ ] manifest.json version number is updated
+- [ ] All icon files exist and are correct
 
-## 已知限制
+## Known Limitations
 
-記錄任何已知的限制或問題：
-- 無法在 chrome:// 或 chrome-extension:// 頁面運作（預期行為）
-- 某些使用複雜 DRM 的網站可能無法完全解除限制
+Record any known limitations or issues:
+- Cannot work on chrome:// or chrome-extension:// pages (expected behavior)
+- Some sites with complex DRM may not be fully unlockable
