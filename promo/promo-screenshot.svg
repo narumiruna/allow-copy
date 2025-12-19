@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f5e9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c8e6c9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="url(#bgGradient)"/>
+
+  <!-- Title Section -->
+  <text x="640" y="80" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#1B5E20" text-anchor="middle">
+    Allow Copy
+  </text>
+  <text x="640" y="130" font-family="Arial, sans-serif" font-size="24" fill="#2E7D32" text-anchor="middle">
+    Enable copying and text selection on any website
+  </text>
+
+  <!-- Before/After Comparison -->
+  <g id="before-section">
+    <!-- Before Container -->
+    <rect x="80" y="200" width="520" height="520" rx="12" fill="white" stroke="#BDBDBD" stroke-width="3"/>
+
+    <!-- Label -->
+    <rect x="100" y="220" width="120" height="40" rx="20" fill="#F44336"/>
+    <text x="160" y="247" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">
+      BEFORE
+    </text>
+
+    <!-- Browser Window -->
+    <rect x="120" y="290" width="440" height="340" rx="8" fill="#FAFAFA" stroke="#E0E0E0" stroke-width="2"/>
+
+    <!-- Browser Tabs -->
+    <rect x="130" y="300" width="100" height="30" rx="4" fill="#E0E0E0"/>
+    <text x="180" y="322" font-family="Arial, sans-serif" font-size="14" fill="#616161" text-anchor="middle">
+      Protected Site
+    </text>
+
+    <!-- Content Area with text -->
+    <rect x="140" y="350" width="400" height="250" fill="white"/>
+    <text x="340" y="390" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      This is some important text
+    </text>
+    <text x="340" y="420" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      that you want to copy,
+    </text>
+    <text x="340" y="450" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      but the website prevents
+    </text>
+    <text x="340" y="480" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      text selection and copying.
+    </text>
+
+    <!-- Blocked Icon -->
+    <circle cx="340" cy="540" r="30" fill="#F44336" opacity="0.9"/>
+    <line x1="320" y1="520" x2="360" y2="560" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <line x1="360" y1="520" x2="320" y2="560" stroke="white" stroke-width="4" stroke-linecap="round"/>
+
+    <text x="340" y="600" font-family="Arial, sans-serif" font-size="16" fill="#D32F2F" text-anchor="middle" font-weight="bold">
+      ✗ Cannot select or copy text
+    </text>
+  </g>
+
+  <!-- Arrow -->
+  <g id="arrow">
+    <path d="M 620 440 L 660 440" stroke="#4CAF50" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <polygon points="660,420 690,440 660,460" fill="#4CAF50"/>
+  </g>
+
+  <g id="after-section">
+    <!-- After Container -->
+    <rect x="680" y="200" width="520" height="520" rx="12" fill="white" stroke="#4CAF50" stroke-width="4"/>
+
+    <!-- Label -->
+    <rect x="700" y="220" width="120" height="40" rx="20" fill="#4CAF50"/>
+    <text x="760" y="247" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">
+      AFTER
+    </text>
+
+    <!-- Browser Window -->
+    <rect x="720" y="290" width="440" height="340" rx="8" fill="#FAFAFA" stroke="#E0E0E0" stroke-width="2"/>
+
+    <!-- Browser Tabs -->
+    <rect x="730" y="300" width="100" height="30" rx="4" fill="#E0E0E0"/>
+    <text x="780" y="322" font-family="Arial, sans-serif" font-size="14" fill="#616161" text-anchor="middle">
+      Protected Site
+    </text>
+
+    <!-- Extension Icon -->
+    <circle cx="1120" cy="315" r="12" fill="#4CAF50"/>
+    <text x="1120" y="323" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">
+      ✓
+    </text>
+
+    <!-- Content Area with selected text -->
+    <rect x="740" y="350" width="400" height="250" fill="white"/>
+
+    <!-- Selected text (highlighted) -->
+    <rect x="750" y="372" width="380" height="115" fill="#B3E5FC" opacity="0.5"/>
+
+    <text x="940" y="390" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      This is some important text
+    </text>
+    <text x="940" y="420" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      that you want to copy,
+    </text>
+    <text x="940" y="450" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      but the website prevents
+    </text>
+    <text x="940" y="480" font-family="Georgia, serif" font-size="16" fill="#424242" text-anchor="middle">
+      text selection and copying.
+    </text>
+
+    <!-- Success Icon -->
+    <circle cx="940" cy="540" r="30" fill="#4CAF50"/>
+    <polyline points="925,540 935,550 955,530" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="940" y="600" font-family="Arial, sans-serif" font-size="16" fill="#2E7D32" text-anchor="middle" font-weight="bold">
+      ✓ Text selection enabled!
+    </text>
+  </g>
+
+  <!-- Bottom Feature Highlights -->
+  <g id="features">
+    <circle cx="320" cy="760" r="8" fill="#4CAF50"/>
+    <text x="340" y="767" font-family="Arial, sans-serif" font-size="18" fill="#2E7D32">
+      Enable/Disable per site
+    </text>
+
+    <circle cx="640" cy="760" r="8" fill="#4CAF50"/>
+    <text x="660" y="767" font-family="Arial, sans-serif" font-size="18" fill="#2E7D32">
+      Works on all websites
+    </text>
+
+    <circle cx="960" cy="760" r="8" fill="#4CAF50"/>
+    <text x="980" y="767" font-family="Arial, sans-serif" font-size="18" fill="#2E7D32">
+      Privacy-focused
+    </text>
+  </g>
+</svg>

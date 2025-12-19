@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 560">
+  <defs>
+    <linearGradient id="marqueeBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f5e9;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a5d6a7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#66bb6a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="560" fill="url(#marqueeBgGradient)"/>
+
+  <!-- Left Side - Extension Icon and Title -->
+  <g id="left-content">
+    <!-- Large Icon Circle Background -->
+    <circle cx="200" cy="280" r="100" fill="white" opacity="0.9" filter="url(#shadow)"/>
+
+    <!-- Two Document Icon (from extension icon) -->
+    <g transform="translate(150, 210) scale(2)">
+      <!-- Back document -->
+      <rect x="15" y="15" width="45" height="50" rx="4" fill="white" stroke="#4CAF50" stroke-width="3"/>
+
+      <!-- Front document -->
+      <rect x="0" y="0" width="45" height="50" rx="4" fill="#4CAF50" stroke="#2E7D32" stroke-width="3"/>
+      <rect x="8" y="12" width="29" height="4" rx="2" fill="white"/>
+      <rect x="8" y="22" width="29" height="4" rx="2" fill="white"/>
+      <rect x="8" y="32" width="20" height="4" rx="2" fill="white"/>
+    </g>
+
+    <!-- Title and Tagline -->
+    <text x="380" y="250" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#1B5E20">
+      Allow Copy
+    </text>
+    <text x="380" y="300" font-family="Arial, sans-serif" font-size="28" fill="#2E7D32">
+      Copy and select text on any website
+    </text>
+
+    <!-- Feature List -->
+    <g id="features-list">
+      <!-- Feature 1 -->
+      <circle cx="390" cy="355" r="6" fill="#1B5E20"/>
+      <text x="410" y="362" font-family="Arial, sans-serif" font-size="20" fill="#1B5E20">
+        Bypass copy protection with one click
+      </text>
+
+      <!-- Feature 2 -->
+      <circle cx="390" cy="395" r="6" fill="#1B5E20"/>
+      <text x="410" y="402" font-family="Arial, sans-serif" font-size="20" fill="#1B5E20">
+        Enable/disable per website
+      </text>
+
+      <!-- Feature 3 -->
+      <circle cx="390" cy="435" r="6" fill="#1B5E20"/>
+      <text x="410" y="442" font-family="Arial, sans-serif" font-size="20" fill="#1B5E20">
+        Privacy-focused, no data collection
+      </text>
+    </g>
+  </g>
+
+  <!-- Right Side - Visual Demo -->
+  <g id="right-demo">
+    <!-- Browser Window Background -->
+    <rect x="850" y="120" width="480" height="340" rx="12" fill="white" filter="url(#shadow)"/>
+
+    <!-- Browser Chrome -->
+    <rect x="850" y="120" width="480" height="40" rx="12" fill="#E0E0E0"/>
+    <rect x="850" y="148" width="480" height="12" fill="#E0E0E0"/>
+
+    <!-- Tab -->
+    <rect x="870" y="128" width="140" height="28" rx="6" fill="white"/>
+    <text x="940" y="148" font-family="Arial, sans-serif" font-size="14" fill="#616161" text-anchor="middle">
+      Protected Website
+    </text>
+
+    <!-- Extension Icon in Browser -->
+    <circle cx="1290" cy="142" r="10" fill="#4CAF50"/>
+    <text x="1290" y="148" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">
+      ✓
+    </text>
+
+    <!-- Content Area -->
+    <rect x="870" y="180" width="440" height="260" fill="#FAFAFA"/>
+
+    <!-- Selected Text Highlight -->
+    <rect x="890" y="220" width="400" height="150" fill="#B3E5FC" opacity="0.4"/>
+
+    <!-- Text Content -->
+    <text x="1090" y="250" font-family="Georgia, serif" font-size="20" fill="#424242" text-anchor="middle">
+      This text was protected from
+    </text>
+    <text x="1090" y="285" font-family="Georgia, serif" font-size="20" fill="#424242" text-anchor="middle">
+      being selected and copied,
+    </text>
+    <text x="1090" y="320" font-family="Georgia, serif" font-size="20" fill="#424242" text-anchor="middle">
+      but now it's accessible!
+    </text>
+
+    <!-- Success indicator -->
+    <g transform="translate(1040, 370)">
+      <circle cx="50" cy="25" r="22" fill="#4CAF50"/>
+      <polyline points="38,25 47,34 62,19" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- "Now you can copy!" label -->
+    <rect x="950" y="490" width="180" height="36" rx="18" fill="#4CAF50"/>
+    <text x="1040" y="515" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">
+      Now you can copy!
+    </text>
+  </g>
+
+  <!-- Bottom Badge -->
+  <rect x="50" y="500" width="200" height="40" rx="20" fill="white" opacity="0.9"/>
+  <text x="150" y="527" font-family="Arial, sans-serif" font-size="18" fill="#2E7D32" text-anchor="middle" font-weight="600">
+    Free & Open Source
+  </text>
+</svg>
