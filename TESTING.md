@@ -15,7 +15,6 @@
 
 ### 3. Text Selection Functionality
 Suggested test sites:
-- https://www.hongxiu.com/ (Chinese novel site that blocks copying)
 - https://www.bbc.com/ (some articles may have copy restrictions)
 - Other sites that disable right-click/copying
 
