@@ -111,8 +111,12 @@ async function init() {
   updateStatus(enabled);
 
   // Listen for toggle changes
-  toggle.addEventListener('change', () => {
-    toggleSite(tab, hostname, toggle.checked);
+  toggle.addEventListener('change', async () => {
+    try {
+      await toggleSite(tab, hostname, toggle.checked);
+    } catch (e) {
+      console.error('Failed to toggle site state:', e);
+    }
   });
 }
 
