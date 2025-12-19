@@ -12,9 +12,9 @@ const BADGE_CONFIG = {
   }
 };
 
-// Utility: Check if URL is valid for extension
-function isValidUrl(url) {
-  if (!url) return false;
+// Utility: Check if URL is valid for extension and return parsed hostname
+function parseAndValidateUrl(url) {
+  if (!url) return null;
 
   try {
     const urlObj = new URL(url);
@@ -22,19 +22,10 @@ function isValidUrl(url) {
 
     // Skip chrome:// and other special URLs
     if (!hostname || url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
-      return false;
+      return null;
     }
 
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-// Utility: Extract hostname from URL
-function getHostname(url) {
-  try {
-    return new URL(url).hostname;
+    return hostname;
   } catch (e) {
     return null;
   }
@@ -86,16 +77,13 @@ async function injectContentScript(tabId) {
 
 // Update badge for a specific tab
 async function updateBadge(tabId, url) {
-  if (!isValidUrl(url)) {
-    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId });
-    return;
-  }
-
-  const hostname = getHostname(url);
+  const hostname = parseAndValidateUrl(url);
+  
   if (!hostname) {
     await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId });
     return;
   }
+
   const enabled = await isSiteEnabled(hostname);
 
   if (enabled) {
@@ -153,9 +141,9 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
   // Only handle main frame navigations
   if (details.frameId !== 0) return;
 
-  if (!isValidUrl(details.url)) return;
+  const hostname = parseAndValidateUrl(details.url);
+  if (!hostname) return;
 
-  const hostname = getHostname(details.url);
   const enabled = await isSiteEnabled(hostname);
 
   if (enabled) {
@@ -169,9 +157,8 @@ chrome.runtime.onInstalled.addListener(async () => {
   const tabs = await chrome.tabs.query({});
 
   for (const tab of tabs) {
-    if (!isValidUrl(tab.url)) continue;
-
-    const hostname = getHostname(tab.url);
+    const hostname = parseAndValidateUrl(tab.url);
+    if (!hostname) continue;
 
     // Inject if site is enabled
     if (sites[hostname] === true) {
