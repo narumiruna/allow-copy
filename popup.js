@@ -103,6 +103,9 @@ async function processToggleQueue() {
 async function toggleSite(tab, hostname, enabled) {
   return new Promise((resolve, reject) => {
     toggleQueue.push({ tab, hostname, enabled, resolve, reject });
+    // Start processing queue (non-blocking)
+    // Individual operations resolve/reject their own promises
+    // This catch only handles unexpected queue processing errors
     processToggleQueue().catch(err => {
       console.error('Queue processing error:', err);
     });
