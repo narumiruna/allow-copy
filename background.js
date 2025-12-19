@@ -126,8 +126,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
   try {
     if (namespace === 'sync' && changes.sites) {
-      // Update badges for all open tabs so that all windows stay in sync
-      const tabs = await chrome.tabs.query({});
+      // Only update badge for the currently active tab to reduce CPU usage
+      // This is sufficient since the badge is updated when switching tabs anyway
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
       for (const tab of tabs) {
         if (tab && tab.id !== null && tab.id !== undefined && tab.url) {
           await updateBadge(tab.id, tab.url);

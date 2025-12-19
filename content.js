@@ -27,11 +27,14 @@
     'onpaste'
   ];
 
+  const RAF_MAX_ATTEMPTS = 50; // Max 50 frames. At 60fps: ~833ms, at 30fps: ~1667ms
+
   // State
   let isEnabled = true;
   let eventListeners = [];
   let styleElement = null;
   let observer = null;
+  let observerThrottleTimer = null;
 
   // Create unified mouse event handler
   function createMouseEventHandler() {
@@ -110,7 +113,9 @@
     `;
     style.id = STYLE_ID;
 
-    // Wait for head to exist
+    // Wait for head to exist with timeout fallback
+    let attempts = 0;
+    
     const addStyle = () => {
       if (document.head) {
         // Remove existing style if present
@@ -123,7 +128,13 @@
           styleElement = style;
         }
       } else {
-        requestAnimationFrame(addStyle);
+        attempts++;
+        if (attempts < RAF_MAX_ATTEMPTS) {
+          requestAnimationFrame(addStyle);
+        } else {
+          // Fallback: document.head not available after timeout, give up
+          console.log('Allow Copy: document.head not available, skipping style injection');
+        }
       }
     };
     addStyle();
@@ -153,6 +164,12 @@
 
   // Function to remove cleanup
   function removeCleanup() {
+    // Clear any pending throttle timer
+    if (observerThrottleTimer) {
+      clearTimeout(observerThrottleTimer);
+      observerThrottleTimer = null;
+    }
+    
     // Remove the style element
     const existingStyle = document.getElementById(STYLE_ID);
     if (existingStyle) {
@@ -172,14 +189,26 @@
     if (!isEnabled) return;
 
     // Observer to handle dynamically added content
+    // Throttle callback to prevent excessive CPU usage on rapidly changing pages
     observer = new MutationObserver(() => {
-      // Check if style was removed and re-inject if needed
-      if (!document.getElementById(STYLE_ID)) {
-        injectStyle();
+      // Cancel any pending throttle timer
+      if (observerThrottleTimer) {
+        clearTimeout(observerThrottleTimer);
       }
+      
+      // Throttle to max once per 100ms to reduce CPU usage
+      observerThrottleTimer = setTimeout(() => {
+        observerThrottleTimer = null;
+        // Check if style was removed and re-inject if needed
+        if (isEnabled && !document.getElementById(STYLE_ID)) {
+          injectStyle();
+        }
+      }, 100);
     });
 
-    // Start observing when head is available
+    // Start observing when head is available with timeout fallback
+    let attempts = 0;
+    
     const startObserver = () => {
       if (document.head) {
         observer.observe(document.head, {
@@ -187,7 +216,13 @@
           subtree: false
         });
       } else {
-        requestAnimationFrame(startObserver);
+        attempts++;
+        if (attempts < RAF_MAX_ATTEMPTS) {
+          requestAnimationFrame(startObserver);
+        } else {
+          // Fallback: document.head not available after timeout, give up
+          console.log('Allow Copy: document.head not available, skipping observer setup');
+        }
       }
     };
     startObserver();
