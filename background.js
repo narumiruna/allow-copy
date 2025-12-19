@@ -20,8 +20,8 @@ function parseAndValidateUrl(url) {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
-    // Skip chrome:// and other special URLs
-    if (!hostname || url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
+    // Only allow http and https protocols
+    if (!hostname || (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:')) {
       return null;
     }
 
@@ -126,10 +126,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
   try {
     if (namespace === 'sync' && changes.sites) {
-      // Update badge for current active tab
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tabs?.[0]) {
-        await updateBadge(tabs[0].id, tabs[0].url);
+      // Update badges for all open tabs so that all windows stay in sync
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab && tab.id != null && tab.url) {
+          await updateBadge(tab.id, tab.url);
+        }
       }
     }
   } catch (e) {
