@@ -111,20 +111,30 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
 // Listen for tab updates (URL changes, page loads)
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Only update when URL changes or page completes loading
-  if (changeInfo.url || changeInfo.status === 'complete') {
-    await updateBadge(tabId, tab.url);
+  try {
+    // Only update when URL changes or page completes loading
+    if (changeInfo.url || changeInfo.status === 'complete') {
+      await updateBadge(tabId, tab.url);
+    }
+  } catch (e) {
+    // Error during tab update handling - log for debugging
+    console.error('Error in tabs.onUpdated:', e);
   }
 });
 
 // Listen for storage changes (when user toggles a site)
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
-  if (namespace === 'sync' && changes.sites) {
-    // Update badge for current active tab
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs?.[0]) {
-      await updateBadge(tabs[0].id, tabs[0].url);
+  try {
+    if (namespace === 'sync' && changes.sites) {
+      // Update badge for current active tab
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs?.[0]) {
+        await updateBadge(tabs[0].id, tabs[0].url);
+      }
     }
+  } catch (e) {
+    // Error during storage change handling - log for debugging
+    console.error('Error in storage.onChanged:', e);
   }
 });
 
