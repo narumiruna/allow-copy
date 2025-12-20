@@ -114,6 +114,6 @@
   <!-- Bottom Badge -->
   <rect x="50" y="500" width="200" height="40" rx="20" fill="white" opacity="0.9"/>
   <text x="150" y="527" font-family="Arial, sans-serif" font-size="18" fill="#2E7D32" text-anchor="middle" font-weight="600">
-    Free & Open Source
+    Free &amp; Open Source
   </text>
 </svg>
