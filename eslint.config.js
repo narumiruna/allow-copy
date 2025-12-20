@@ -2,7 +2,7 @@ export default [
   {
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'module',
+      sourceType: 'script',
       globals: {
         chrome: 'readonly',
         window: 'readonly',
