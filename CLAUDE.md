@@ -11,11 +11,13 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 ### Core Components
 
 - **manifest.json**: Chrome extension manifest (Manifest V3)
+
   - Permissions: `storage` (for settings sync), `activeTab` (for tab access on user action), `scripting` (for dynamic content script injection), `webNavigation` (for detecting navigation events)
   - No static content scripts - uses dynamic injection for privacy
   - Background service worker for badge updates, tab monitoring, and content script injection
 
 - **background.js**: Background service worker
+
   - **Content Script Injection**: Dynamically injects content script using `chrome.scripting.executeScript()` with `injectImmediately: true`
   - Injects on enabled sites via `webNavigation.onCommitted` event for automatic functionality
   - Prevents duplicate injection by checking for existing script with ping/pong mechanism
@@ -27,6 +29,7 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
   - On extension install/reload, injects into already-open tabs with enabled sites
 
 - **content.js**: Main functionality - dynamically injected into web pages
+
   - **Duplicate Prevention**: Checks `window.__allowCopyInjected` flag to prevent multiple injections
   - **Ping/Pong**: Responds to ping messages to indicate script is already injected
   - Uses capture phase (`true`) for event listeners to intercept before page handlers
@@ -50,6 +53,7 @@ A Chrome extension (Manifest V3) that enables copying and text selection on webs
 ### Event Handling Strategy
 
 The extension uses event capturing (third parameter `true`) to intercept events before website handlers:
+
 - `mousedown`, `mouseup`, `click`: Handles both left-click (`button === 0`) and right-click (`button === 2`)
   - **Left-click**: Calls `stopPropagation()` and `stopImmediatePropagation()` to block website handlers that prevent text selection, but does NOT call `preventDefault()` to allow normal clicks and selection to work
   - **Right-click**: Additionally calls `preventDefault()` to block page navigation while still allowing contextmenu to fire
@@ -125,6 +129,7 @@ The version number is automatically extracted from `manifest.json`. The zip file
 ### Testing
 
 After making changes:
+
 1. Go to `chrome://extensions/`
 2. Click the reload icon on the extension card
 3. Reload any test web pages
@@ -138,11 +143,11 @@ After making changes:
 ### Key Implementation Details
 
 - **Dynamic Injection**: Content script is injected programmatically using `chrome.scripting.executeScript()` with `injectImmediately: true` for early timing
-- **Injection Points**: 
+- **Injection Points**:
   - When popup opens (via `activeTab` permission)
   - On navigation to enabled sites (via `webNavigation.onCommitted`)
   - On extension install/reload for already-open enabled sites
-- **Duplicate Prevention**: 
+- **Duplicate Prevention**:
   - Checks `window.__allowCopyInjected` flag in content script
   - Uses ping/pong messaging in background script before injection
 - **Event Blocking**: Uses `stopPropagation()` and `stopImmediatePropagation()` to block website handlers while allowing browser's default behavior (context menu)
@@ -153,6 +158,7 @@ After making changes:
 - **Compatibility**: Uses callback-based Chrome APIs with `chrome.runtime.lastError` check instead of Promise-based APIs for better compatibility
 
 **Note on Timing**: While `injectImmediately: true` provides early injection, it cannot fully match static `document_start` timing. However, this is acceptable because:
+
 - Most websites apply restrictions via JavaScript that loads later
 - Event interception works even when injected after page start
 - CSS overrides with `!important` are effective regardless of timing
