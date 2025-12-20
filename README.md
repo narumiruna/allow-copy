@@ -18,6 +18,7 @@ A Chrome extension that enables copying and text selection on websites that disa
 ### From Source (Developer Mode)
 
 1. Clone this repository or download the source code:
+
    ```bash
    git clone https://github.com/narumiruna/allow-copy.git
    ```
@@ -35,12 +36,14 @@ A Chrome extension that enables copying and text selection on websites that disa
 ## How It Works
 
 The extension uses the `activeTab` permission model for enhanced privacy and security:
+
 - When you click the extension icon, it gains temporary access to the current tab
 - The content script is injected dynamically only on sites where you've enabled it
 - For enabled sites, the script auto-injects on navigation to maintain functionality
 - No broad permissions are requested - the extension only works where you want it
 
 The content script:
+
 - Intercepts and stops propagation of events that websites use to disable right-clicking
 - **Blocks navigation on right-click** by preventing default behavior on `mousedown`/`mouseup`/`click` events when right mouse button is detected (e.g., comic websites where right-click navigates pages)
 - **Allows browser context menu** by not preventing default on `contextmenu` event
@@ -66,7 +69,8 @@ Once enabled for a site, the extension works automatically:
 2. Right-click anywhere on the page - the browser's context menu will appear!
 3. Select and copy text - it will work!
 
-**Note:** 
+**Note:**
+
 - The extension is disabled by default for all sites (opt-in model for your privacy)
 - Each website has its own enable/disable setting
 - Settings are saved and synced across your devices
@@ -75,6 +79,7 @@ Once enabled for a site, the extension works automatically:
 ## Privacy & Security
 
 This extension follows privacy-first principles:
+
 - **Uses activeTab permission**: Only accesses tabs you explicitly interact with
 - **Per-site opt-in**: You control exactly which sites the extension works on
 - **No broad permissions**: Does not request access to all websites by default

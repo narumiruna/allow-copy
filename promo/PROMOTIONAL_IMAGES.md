@@ -7,6 +7,7 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 ## Image Types and Specifications
 
 ### 1. Screenshots
+
 - **Dimensions**: 1280x800 or 640x400 pixels
 - **Format**: Square corners, full bleed (no padding)
 - **Quantity**: Minimum 1, maximum 5 recommended
@@ -14,29 +15,34 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 - **Purpose**: Display actual user experience focusing on core features
 
 **Current Implementation**: 1280x800 before/after comparison showing:
+
 - Left side: Website with copy protection (blocked state)
 - Right side: Same website with Allow Copy enabled (working state)
 - Bottom: Three key features listed
 
 ### 2. Small Promo Tile
+
 - **Dimensions**: 440x280 pixels
 - **Format**: Simple, saturated colors, recognizable when shrunk
 - **File**: `promo-tile.svg` (source), convert to PNG for upload
 - **Placement**: Homepage, category pages, and search results
 
 **Current Implementation**: Green gradient background with:
+
 - Extension icon (two documents)
 - "Allow Copy" title
 - Brief tagline
 - Two feature tags
 
 ### 3. Marquee Image
+
 - **Dimensions**: 1400x560 pixels
 - **Format**: Wide banner, well-defined edges
 - **File**: `promo-marquee.svg` (source), convert to PNG for upload
 - **Purpose**: Used in rotating carousel on Chrome Web Store homepage (if selected)
 
 **Current Implementation**: Horizontal layout with:
+
 - Left: Large icon, title, tagline, and bullet points
 - Right: Browser window mockup showing selected text
 - Bottom: "Free & Open Source" badge
@@ -44,6 +50,7 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 ## Design Guidelines
 
 ### General Best Practices
+
 - Display actual user experience focusing on core features
 - Keep images clear, properly sized, and not blurry or pixelated
 - Include visual aids like infographics to explain functionality
@@ -51,6 +58,7 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 - Maintain consistent branding with other listing elements
 
 ### Visual Design
+
 - **Colors**: Use saturated colors; avoid excessive white and light gray
 - **Composition**: Keep simple and avoid cluttered compositions
 - **Edges**: Fill entire region with well-defined edges
@@ -58,6 +66,7 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 - **Branding**: Maintain consistent branding across all promotional assets
 
 ### Content Guidelines
+
 - Avoid misleading claims like "Editor's Choice" or ranking statements
 - Focus on demonstrating the extension's functionality
 - Show before/after comparisons when applicable
@@ -66,6 +75,7 @@ Reference: https://developer.chrome.com/docs/webstore/best-listing
 ## Color Scheme
 
 Based on the extension's branding:
+
 - **Primary Green**: `#4CAF50`
 - **Dark Green**: `#2E7D32`
 - **Darker Green**: `#1B5E20`
@@ -90,6 +100,7 @@ Or run it directly from anywhere:
 ```
 
 The script will:
+
 - Check if `cairosvg` is installed (install with `python3 -m pip install cairosvg`)
 - Convert all three promotional images to PNG format
 - Place the PNG files in the same directory (`promo/`)
