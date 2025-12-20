@@ -1,5 +1,11 @@
 export default [
   {
+    // Ignore the config file itself (it's an ES module)
+    ignores: ['eslint.config.js'],
+  },
+  {
+    // All source files are classic scripts, not ES modules
+    files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'script',
