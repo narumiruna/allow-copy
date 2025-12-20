@@ -4,6 +4,9 @@ create_icons.sh
 # Distribution files
 *.zip
 
+# Promotional images (generated from SVG)
+promo/*.png
+
 # Test files
 test.html
 

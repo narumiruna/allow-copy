@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 280">
+  <defs>
+    <linearGradient id="tileBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2E7D32;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="440" height="280" fill="url(#tileBgGradient)"/>
+
+  <!-- Icon Circle Background -->
+  <circle cx="220" cy="100" r="50" fill="white" opacity="0.2"/>
+
+  <!-- Two Document Icon (simplified from extension icon) -->
+  <g transform="translate(180, 60)">
+    <!-- Back document -->
+    <rect x="15" y="15" width="45" height="50" rx="4" fill="white" stroke="rgba(255,255,255,0.8)" stroke-width="3"/>
+
+    <!-- Front document with lines -->
+    <rect x="0" y="0" width="45" height="50" rx="4" fill="#E8F5E9" stroke="white" stroke-width="3"/>
+    <rect x="8" y="12" width="29" height="4" rx="2" fill="#4CAF50"/>
+    <rect x="8" y="22" width="29" height="4" rx="2" fill="#4CAF50"/>
+    <rect x="8" y="32" width="20" height="4" rx="2" fill="#4CAF50"/>
+  </g>
+
+  <!-- Title -->
+  <text x="220" y="180" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle">
+    Allow Copy
+  </text>
+
+  <!-- Subtitle -->
+  <text x="220" y="210" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" opacity="0.95">
+    Copy text from any website
+  </text>
+
+  <!-- Feature tags -->
+  <rect x="90" y="235" width="100" height="28" rx="14" fill="white" opacity="0.25"/>
+  <text x="140" y="254" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="600">
+    Easy to use
+  </text>
+
+  <rect x="250" y="235" width="100" height="28" rx="14" fill="white" opacity="0.25"/>
+  <text x="300" y="254" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="600">
+    Privacy first
+  </text>
+</svg>

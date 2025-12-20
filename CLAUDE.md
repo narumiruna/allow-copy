@@ -215,13 +215,26 @@ cairosvg.svg2png(url='icon.svg', write_to='icon128.png', output_width=128, outpu
 
 ```
 .
+├── docs/              # Documentation
+│   └── TESTING.md     # Testing instructions
+├── promo/             # Promotional images for Chrome Web Store
+│   ├── PROMOTIONAL_IMAGES.md  # Promotional image specifications
+│   ├── convert.sh             # SVG to PNG conversion script
+│   ├── promo-screenshot.svg   # Screenshot (1280x800)
+│   ├── promo-tile.svg         # Small promo tile (440x280)
+│   └── promo-marquee.svg      # Marquee image (1400x560)
 ├── manifest.json      # Extension manifest
-├── background.js      # Background service worker (badge updates)
+├── background.js      # Background service worker (badge updates, injection)
 ├── content.js         # Content script (main logic)
 ├── popup.html         # Extension popup UI
 ├── popup.js           # Popup logic
+├── popup.css          # Popup styles
 ├── icon.svg           # Icon source (vector)
-├── icon16.png         # Extension icons
-├── icon48.png
-└── icon128.png
+├── icon16.png         # Extension icon (16x16)
+├── icon48.png         # Extension icon (48x48)
+├── icon128.png        # Extension icon (128x128)
+├── Makefile           # Build script for Chrome Web Store zip
+├── README.md          # Project documentation
+├── CLAUDE.md          # Claude Code instructions
+└── LICENSE            # MIT License
 ```
