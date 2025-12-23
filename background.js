@@ -77,25 +77,33 @@ async function injectContentScript(tabId) {
 
 // Update badge for a specific tab
 async function updateBadge(tabId, url) {
-  const hostname = parseAndValidateUrl(url)
+  try {
+    const hostname = parseAndValidateUrl(url)
 
-  if (!hostname) {
-    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
-    return
-  }
+    if (!hostname) {
+      await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
+      return
+    }
 
-  const enabled = await isSiteEnabled(hostname)
+    const enabled = await isSiteEnabled(hostname)
 
-  if (enabled) {
-    // Show green badge with checkmark
-    await chrome.action.setBadgeText({ text: BADGE_CONFIG.ENABLED.text, tabId })
-    await chrome.action.setBadgeBackgroundColor({ color: BADGE_CONFIG.ENABLED.color, tabId })
+    if (enabled) {
+      // Show green badge with checkmark
+      await chrome.action.setBadgeText({ text: BADGE_CONFIG.ENABLED.text, tabId })
+      await chrome.action.setBadgeBackgroundColor({ color: BADGE_CONFIG.ENABLED.color, tabId })
 
-    // Inject content script if site is enabled
-    await injectContentScript(tabId)
-  } else {
-    // No badge for disabled sites
-    await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
+      // Inject content script if site is enabled
+      await injectContentScript(tabId)
+    } else {
+      // No badge for disabled sites
+      await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
+    }
+  } catch (e) {
+    // Tab might have been closed during async operations - silently ignore these expected errors
+    // Log other unexpected errors for debugging
+    if (e.message && !e.message.includes('No tab with id')) {
+      console.error('Unexpected error in updateBadge:', e)
+    }
   }
 }
 
