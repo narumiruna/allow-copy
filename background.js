@@ -98,8 +98,12 @@ async function updateBadge(tabId, url) {
       // No badge for disabled sites
       await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
     }
-  } catch (_e) {
-    // Tab might have been closed - this is expected and can be silently ignored
+  } catch (e) {
+    // Tab might have been closed during async operations - silently ignore these expected errors
+    // Log other unexpected errors for debugging
+    if (e.message && !e.message.includes('No tab with id')) {
+      console.error('Unexpected error in updateBadge:', e)
+    }
   }
 }
 
