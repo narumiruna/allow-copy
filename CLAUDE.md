@@ -105,6 +105,101 @@ The extension uses event capturing (third parameter `true`) to intercept events 
 
 **Privacy Benefits**: This permission model avoids requesting broad `<all_urls>` access, satisfying Chrome Web Store requirements and providing better user privacy.
 
+## Planned Features
+
+### Phase 1: Restriction Detection and Status Display (Priority)
+
+Enhance the popup UI to display detailed information about detected restrictions and enabled features:
+
+**Detection Information**:
+
+- Detect CSS-based restrictions:
+  - `user-select: none` (text selection disabled)
+  - `pointer-events: none` (mouse interaction disabled)
+  - Cursor restrictions
+- Detect JavaScript-based restrictions:
+  - Event listeners blocking `contextmenu`
+  - Event listeners blocking `selectstart`, `copy`, `cut`
+  - Event listeners blocking mouse events
+
+**Status Display in Popup**:
+
+- ✅ **Current Status**: Extension enabled/disabled for this site
+- 🔍 **Detected Restrictions**: List of restrictions found on the page
+  - "Text selection disabled (CSS)"
+  - "Right-click menu blocked (JavaScript)"
+  - "Copy/cut operations blocked"
+  - "Mouse cursor restrictions"
+- ⚡ **Enabled Features**: What the extension is currently doing
+  - "Text selection restored"
+  - "Right-click menu restored"
+  - "Copy/cut operations enabled"
+  - "Cursor behavior normalized"
+
+**Implementation Requirements**:
+
+- Content script detects restrictions on page load
+- Send detection results to popup via message passing
+- Update popup UI to display detection results
+- Real-time updates when restrictions are detected/removed
+
+**Benefits**:
+
+- Transparency: Users understand what the extension is doing
+- Debugging: Helps identify if extension is working correctly
+- Education: Users learn what restrictions websites apply
+
+### Phase 2: Granular Feature Control (Future)
+
+Allow users to selectively enable/disable specific features per site:
+
+**Per-Site Feature Toggles**:
+
+```
+example.com
+□ Enable text selection
+□ Enable right-click menu
+□ Enable copy/cut operations
+□ Restore cursor styles
+```
+
+**Storage Schema Extension**:
+
+```javascript
+{
+  sites: {
+    "example.com": {
+      enabled: true,
+      features: {
+        textSelection: true,
+        contextMenu: true,
+        copyPaste: true,
+        cursor: false  // User chose to keep custom cursor
+      }
+    }
+  }
+}
+```
+
+**Implementation Considerations**:
+
+- Backward compatibility with current boolean storage format
+- Migration logic for existing settings
+- Default behavior: all features enabled when extension is turned on
+- UI/UX: Expandable "Advanced Options" section to avoid overwhelming simple users
+
+**Benefits**:
+
+- Maximum flexibility for power users
+- Handle edge cases where users want some features but not others
+- Better compatibility with sites that have legitimate cursor customizations
+
+**Trade-offs**:
+
+- Increased complexity in UI and code
+- Most users will likely use the simple on/off toggle
+- May confuse non-technical users
+
 ## Development
 
 ### Building for Chrome Web Store
