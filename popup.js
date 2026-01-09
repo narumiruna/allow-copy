@@ -218,7 +218,8 @@ async function injectContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
-      files: ['content.js'],
+      // content.js depends on StorageUtils being available in the page context
+      files: ['storage-utils.js', 'content.js'],
       injectImmediately: true,
     })
     return { success: true }

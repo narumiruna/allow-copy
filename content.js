@@ -37,20 +37,23 @@
   let detectionResults = null // Will be set on first detection
   let hasDetectedOnce = false // Track if we've done initial detection
 
-  // Create unified mouse event handler
-  function createMouseEventHandler() {
+  function createLeftMouseEventHandler() {
     return function (e) {
-      if (e.button === MOUSE_BUTTON.LEFT) {
-        // Left mouse button - allow selection and normal clicks
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        // Do NOT preventDefault() - we want normal left-click to work
-      } else if (e.button === MOUSE_BUTTON.RIGHT) {
-        // Right mouse button - block navigation but allow contextmenu
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        e.preventDefault()
-      }
+      if (e.button !== MOUSE_BUTTON.LEFT) return
+      // Allow selection and normal clicks
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+      // Do NOT preventDefault() - we want normal left-click to work
+    }
+  }
+
+  function createRightMouseEventHandler() {
+    return function (e) {
+      if (e.button !== MOUSE_BUTTON.RIGHT) return
+      // Block page handlers while keeping the browser context menu working.
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+      // Do NOT preventDefault() - some browsers suppress the context menu if we do.
     }
   }
 
@@ -163,7 +166,17 @@
     // Mouse events for text selection (textSelection feature)
     if (features.textSelection) {
       const mouseEvents = ['mousedown', 'mouseup', 'click']
-      const mouseHandler = createMouseEventHandler()
+      const mouseHandler = createLeftMouseEventHandler()
+      mouseEvents.forEach((eventType) => {
+        document.addEventListener(eventType, mouseHandler, true)
+        eventListeners.push({ type: eventType, handler: mouseHandler })
+      })
+    }
+
+    // Mouse events for right-click menu (contextMenu feature)
+    if (features.contextMenu) {
+      const mouseEvents = ['mousedown', 'mouseup', 'click']
+      const mouseHandler = createRightMouseEventHandler()
       mouseEvents.forEach((eventType) => {
         document.addEventListener(eventType, mouseHandler, true)
         eventListeners.push({ type: eventType, handler: mouseHandler })
