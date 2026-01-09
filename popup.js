@@ -183,18 +183,27 @@ function setupAdvancedOptionsToggle() {
 // Update features in storage and notify content script
 async function updateFeatures(tab, hostname, features) {
   try {
+    // Save to storage first
     await StorageUtils.updateSiteFeatures(hostname, features)
     currentFeatures = { ...features }
 
-    // Notify content script
-    await chrome.tabs.sendMessage(tab.id, {
-      action: 'updateFeatures',
-      hostname,
-      features,
-    })
-  } catch (_e) {
-    // Tab doesn't have content script or error occurred
-    console.error('Failed to update features:', _e)
+    // Notify content script to apply changes immediately
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'updateFeatures',
+        hostname,
+        features,
+      })
+
+      // Give content script time to apply changes (50ms should be enough)
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    } catch (_msgError) {
+      // If message fails, try reloading the tab to apply changes
+      console.log('Content script not responding, reloading tab')
+      await chrome.tabs.reload(tab.id)
+    }
+  } catch (e) {
+    console.error('Failed to update features:', e)
   }
 }
 

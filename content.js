@@ -228,29 +228,30 @@
       `)
     }
 
-    // Only inject style if there are rules to apply
-    if (cssRules.length === 0) return
-
-    const style = document.createElement('style')
-    style.textContent = `
-      * {
-        ${cssRules.join('\n')}
-      }
-    `
-    style.id = STYLE_ID
-
     // Wait for head to exist with timeout fallback
     let attempts = 0
 
     const addStyle = () => {
       if (document.head) {
-        // Remove existing style if present
+        // Always remove existing style first
         const existingStyle = document.getElementById(STYLE_ID)
         if (existingStyle) {
           existingStyle.remove()
         }
-        if (isEnabled) {
+
+        // Only inject new style if there are rules to apply
+        if (cssRules.length > 0 && isEnabled) {
+          const style = document.createElement('style')
+          style.textContent = `
+            * {
+              ${cssRules.join('\n')}
+            }
+          `
+          style.id = STYLE_ID
           document.head.appendChild(style)
+
+          // Force browser reflow to ensure styles are applied immediately
+          void document.body.offsetHeight
         }
       } else {
         attempts++
@@ -375,6 +376,14 @@
     // Update features if provided
     if (featureSettings) {
       features = { ...StorageUtils.DEFAULT_FEATURES, ...featureSettings }
+
+      // Clear text selection if textSelection feature is disabled
+      if (!features.textSelection && window.getSelection) {
+        const selection = window.getSelection()
+        if (selection && selection.removeAllRanges) {
+          selection.removeAllRanges()
+        }
+      }
     }
 
     if (isEnabled) {
@@ -461,8 +470,11 @@
     if (request.action === 'updateFeatures' && request.hostname === hostname) {
       // Update features while keeping enabled state
       if (isEnabled && request.features) {
+        console.log('Allow Copy: Updating features', request.features)
         initialize(true, request.features)
+        console.log('Allow Copy: Features updated successfully')
       }
+      sendResponse({ success: true })
       return true
     }
   })
