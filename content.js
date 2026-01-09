@@ -26,6 +26,13 @@
 
   const RAF_MAX_ATTEMPTS = 50 // Max 50 frames. At 60fps: ~833ms, at 30fps: ~1667ms
 
+  const DEFAULT_FEATURES = {
+    textSelection: true,
+    contextMenu: true,
+    copyPaste: true,
+    cursor: true,
+  }
+
   // State
   let isEnabled = true
   let features = {
@@ -423,9 +430,9 @@
 
     // Update features if provided
     if (featureSettings === null || featureSettings === undefined) {
-      features = { ...StorageUtils.DEFAULT_FEATURES }
+      features = { ...DEFAULT_FEATURES }
     } else {
-      features = { ...StorageUtils.DEFAULT_FEATURES, ...featureSettings }
+      features = { ...DEFAULT_FEATURES, ...featureSettings }
 
       // Clear text selection if textSelection feature is disabled
       if (!features.textSelection && window.getSelection) {
@@ -487,7 +494,14 @@
 
     // Load initial state and features from storage
     const hostname = window.location.hostname
-    const config = await StorageUtils.getSiteConfig(hostname)
+    let config = { enabled: false, features: { ...DEFAULT_FEATURES } }
+    try {
+      if (typeof StorageUtils !== 'undefined' && typeof StorageUtils.getSiteConfig === 'function') {
+        config = await StorageUtils.getSiteConfig(hostname)
+      }
+    } catch (_e) {
+      // If storage is unavailable, default to disabled with default features.
+    }
     initialize(config.enabled, config.features)
   })
 

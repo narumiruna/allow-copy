@@ -272,10 +272,15 @@ async function getCurrentTab() {
 // Inject content script if not already injected
 async function injectContentScript(tabId) {
   try {
+    // Inject in two steps to guarantee execution order across frames.
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
-      // content.js depends on StorageUtils being available in the page context
-      files: ['storage-utils.js', 'content.js'],
+      files: ['storage-utils.js'],
+      injectImmediately: true,
+    })
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content.js'],
       injectImmediately: true,
     })
     return { success: true }

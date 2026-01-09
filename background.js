@@ -59,10 +59,15 @@ async function injectContentScript(tabId) {
       // Continue to injection
     }
 
-    // Inject storage utilities first, then content script
+    // Inject in two steps to guarantee execution order across frames.
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
-      files: ['storage-utils.js', 'content.js'],
+      files: ['storage-utils.js'],
+      injectImmediately: true,
+    })
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content.js'],
       injectImmediately: true,
     })
 
