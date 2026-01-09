@@ -2,6 +2,10 @@
 
 // State variable to track current features
 let currentFeatures = null
+let lastDetectionResults = null
+
+// UI state storage key
+const UI_STATE_KEY = 'uiState'
 
 // Update status display
 function updateStatus(enabled) {
@@ -18,7 +22,7 @@ function updateStatus(enabled) {
 }
 
 // Update detection info display
-function updateDetectionInfo(detectionResults, isEnabled) {
+function updateDetectionInfo(detectionResults, isEnabled, features) {
   const detectedSection = document.getElementById('detectedRestrictions')
   const enabledSection = document.getElementById('enabledFeatures')
 
@@ -29,6 +33,7 @@ function updateDetectionInfo(detectionResults, isEnabled) {
   }
 
   const { cssRestrictions, jsRestrictions } = detectionResults
+  const effectiveFeatures = features || currentFeatures
   const hasRestrictions =
     cssRestrictions.userSelect ||
     cssRestrictions.pointerEvents ||
@@ -37,17 +42,19 @@ function updateDetectionInfo(detectionResults, isEnabled) {
     jsRestrictions.selectstart ||
     jsRestrictions.copy
 
-  // Always show detected restrictions if there are any
+  // Always show detected restrictions (even if none) for transparency
   if (detectedSection) {
     const list = detectedSection.querySelector('.restriction-list')
     if (list) {
       list.innerHTML = ''
 
-      if (!hasRestrictions) {
-        detectedSection.style.display = 'none'
-      } else {
-        detectedSection.style.display = 'block'
+      detectedSection.style.display = 'block'
 
+      if (!hasRestrictions) {
+        const item = document.createElement('li')
+        item.textContent = 'No restrictions detected'
+        list.appendChild(item)
+      } else {
         if (cssRestrictions.userSelect) {
           const item = document.createElement('li')
           item.textContent = 'Text selection disabled (CSS)'
@@ -81,9 +88,9 @@ function updateDetectionInfo(detectionResults, isEnabled) {
     }
   }
 
-  // Show enabled features only when extension is enabled AND there are restrictions
+  // Always show configured features (even when disabled), based on actual toggle state
   if (enabledSection) {
-    if (!isEnabled || !hasRestrictions) {
+    if (!effectiveFeatures) {
       enabledSection.style.display = 'none'
     } else {
       enabledSection.style.display = 'block'
@@ -91,27 +98,44 @@ function updateDetectionInfo(detectionResults, isEnabled) {
       if (list) {
         list.innerHTML = ''
 
-        if (cssRestrictions.userSelect) {
+        if (!isEnabled) {
+          const item = document.createElement('li')
+          item.textContent = 'Extension is disabled for this site'
+          list.appendChild(item)
+        }
+
+        if (effectiveFeatures.textSelection) {
           const item = document.createElement('li')
           item.textContent = 'Text selection restored'
           list.appendChild(item)
         }
 
-        if (jsRestrictions.contextmenu) {
+        if (effectiveFeatures.contextMenu) {
           const item = document.createElement('li')
           item.textContent = 'Right-click menu restored'
           list.appendChild(item)
         }
 
-        if (jsRestrictions.copy || jsRestrictions.selectstart) {
+        if (effectiveFeatures.copyPaste) {
           const item = document.createElement('li')
           item.textContent = 'Copy/cut operations enabled'
           list.appendChild(item)
         }
 
-        if (cssRestrictions.cursor) {
+        if (effectiveFeatures.cursor) {
           const item = document.createElement('li')
           item.textContent = 'Cursor behavior normalized'
+          list.appendChild(item)
+        }
+
+        if (
+          !effectiveFeatures.textSelection &&
+          !effectiveFeatures.contextMenu &&
+          !effectiveFeatures.copyPaste &&
+          !effectiveFeatures.cursor
+        ) {
+          const item = document.createElement('li')
+          item.textContent = 'No features enabled'
           list.appendChild(item)
         }
       }
@@ -160,12 +184,28 @@ function updateAdvancedOptions(enabled, features) {
 }
 
 // Setup Advanced Options expand/collapse toggle
-function setupAdvancedOptionsToggle() {
+async function setupAdvancedOptionsToggle() {
   const advancedToggle = document.getElementById('advancedToggle')
   const advancedContent = document.getElementById('advancedContent')
   const advancedArrow = advancedToggle?.querySelector('.advanced-arrow')
 
   if (!advancedToggle || !advancedContent) return
+
+  // Restore persisted UI state
+  try {
+    const result = await chrome.storage.sync.get([UI_STATE_KEY])
+    const expanded = result?.[UI_STATE_KEY]?.advancedExpanded === true
+    advancedContent.style.display = expanded ? 'block' : 'none'
+    if (expanded) {
+      advancedArrow?.classList.add('expanded')
+    } else {
+      advancedArrow?.classList.remove('expanded')
+    }
+  } catch (_e) {
+    // If storage fails, default to collapsed
+    advancedContent.style.display = 'none'
+    advancedArrow?.classList.remove('expanded')
+  }
 
   advancedToggle.addEventListener('click', () => {
     const isExpanded = advancedContent.style.display === 'block'
@@ -177,6 +217,9 @@ function setupAdvancedOptionsToggle() {
       advancedContent.style.display = 'block'
       advancedArrow?.classList.add('expanded')
     }
+
+    // Persist UI state (best-effort)
+    chrome.storage.sync.set({ [UI_STATE_KEY]: { advancedExpanded: !isExpanded } }).catch(() => {})
   })
 }
 
@@ -201,6 +244,12 @@ async function updateFeatures(tab, hostname, features) {
       // If message fails, try reloading the tab to apply changes
       console.log('Content script not responding, reloading tab')
       await chrome.tabs.reload(tab.id)
+    }
+
+    // Refresh detection/features UI after applying changes
+    const updatedDetectionInfo = await getDetectionInfo(tab.id)
+    if (updatedDetectionInfo) {
+      updateDetectionInfo(updatedDetectionInfo.detectionResults, true, currentFeatures)
     }
   } catch (e) {
     console.error('Failed to update features:', e)
@@ -350,23 +399,30 @@ async function init() {
   const config = await getSiteConfig(hostname)
   const enabled = config.enabled
   const features = config.features
+  currentFeatures = { ...features }
   toggle.checked = enabled
   updateStatus(enabled)
 
   // Setup Advanced Options
-  setupAdvancedOptionsToggle()
+  await setupAdvancedOptionsToggle()
   updateAdvancedOptions(enabled, features)
 
   // Get detection info from content script
   const detectionInfo = await getDetectionInfo(tab.id)
   if (detectionInfo) {
-    updateDetectionInfo(detectionInfo.detectionResults, enabled)
+    lastDetectionResults = detectionInfo.detectionResults
+    updateDetectionInfo(lastDetectionResults, enabled, currentFeatures)
   }
 
   // Listen for toggle changes
   toggle.addEventListener('change', async () => {
     const newState = toggle.checked
     try {
+      // Update UI immediately during the toggle transition
+      if (lastDetectionResults) {
+        updateDetectionInfo(lastDetectionResults, newState, currentFeatures || features)
+      }
+
       // Pass current features when toggling
       await toggleSite(tab, hostname, newState, newState ? currentFeatures : null)
 
@@ -377,9 +433,10 @@ async function init() {
       // Use newState instead of waiting for content script to update
       const updatedDetectionInfo = await getDetectionInfo(tab.id)
       if (updatedDetectionInfo) {
+        lastDetectionResults = updatedDetectionInfo.detectionResults
         // Use newState (what user wants) instead of isEnabled from content script
         // to avoid race condition where content script hasn't updated yet
-        updateDetectionInfo(updatedDetectionInfo.detectionResults, newState)
+        updateDetectionInfo(lastDetectionResults, newState, currentFeatures || features)
       }
     } catch (e) {
       console.error('Failed to toggle site state:', e)

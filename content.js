@@ -18,6 +18,9 @@
   }
 
   const STYLE_ID = 'allow-copy-style'
+  const PREVENT_RIGHT_CLICK_NAV_KEY = '__allowCopyPreventRightClickNavAt'
+  const PREVENT_RIGHT_CLICK_NAV_WINDOW_MS = 200
+  const PREVENT_RIGHT_CLICK_NAV_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
   const DOCUMENT_PROPERTIES = ['oncontextmenu', 'onselectstart', 'oncopy', 'oncut', 'onpaste']
 
@@ -36,6 +39,32 @@
   let observerThrottleTimer = null
   let detectionResults = null // Will be set on first detection
   let hasDetectedOnce = false // Track if we've done initial detection
+  let lastRightClickAt = 0
+  let shouldPreventRightClickNavigation = false
+
+  function loadRightClickNavigationPreference() {
+    try {
+      const raw = window.sessionStorage?.getItem(PREVENT_RIGHT_CLICK_NAV_KEY)
+      if (!raw) return false
+      const at = Number(raw)
+      if (!Number.isFinite(at)) return false
+      if (Date.now() - at > PREVENT_RIGHT_CLICK_NAV_TTL_MS) {
+        window.sessionStorage?.removeItem(PREVENT_RIGHT_CLICK_NAV_KEY)
+        return false
+      }
+      return true
+    } catch (_e) {
+      return false
+    }
+  }
+
+  function persistRightClickNavigationPreference() {
+    try {
+      window.sessionStorage?.setItem(PREVENT_RIGHT_CLICK_NAV_KEY, String(Date.now()))
+    } catch (_e) {
+      // Ignore storage failures (private mode, denied, etc.)
+    }
+  }
 
   function createLeftMouseEventHandler() {
     return function (e) {
@@ -47,13 +76,19 @@
     }
   }
 
-  function createRightMouseEventHandler() {
+  function createRightMouseEventHandler(eventType) {
     return function (e) {
       if (e.button !== MOUSE_BUTTON.RIGHT) return
+      lastRightClickAt = performance.now()
       // Block page handlers while keeping the browser context menu working.
       e.stopPropagation()
       e.stopImmediatePropagation()
-      // Do NOT preventDefault() - some browsers suppress the context menu if we do.
+      // Prefer not preventing default to avoid suppressing the context menu.
+      // If we detected right-click navigation previously in this session, prevent it.
+      const shouldPreventForEvent = eventType === 'mousedown' || eventType === 'mouseup'
+      if (shouldPreventRightClickNavigation && shouldPreventForEvent && e.cancelable) {
+        e.preventDefault()
+      }
     }
   }
 
@@ -176,8 +211,8 @@
     // Mouse events for right-click menu (contextMenu feature)
     if (features.contextMenu) {
       const mouseEvents = ['mousedown', 'mouseup', 'click']
-      const mouseHandler = createRightMouseEventHandler()
       mouseEvents.forEach((eventType) => {
+        const mouseHandler = createRightMouseEventHandler(eventType)
         document.addEventListener(eventType, mouseHandler, true)
         eventListeners.push({ type: eventType, handler: mouseHandler })
       })
@@ -387,7 +422,9 @@
     isEnabled = enabled
 
     // Update features if provided
-    if (featureSettings) {
+    if (featureSettings === null || featureSettings === undefined) {
+      features = { ...StorageUtils.DEFAULT_FEATURES }
+    } else {
       features = { ...StorageUtils.DEFAULT_FEATURES, ...featureSettings }
 
       // Clear text selection if textSelection feature is disabled
@@ -446,11 +483,26 @@
     // This must be done before initialize() applies CSS changes
     detectRestrictions()
 
+    shouldPreventRightClickNavigation = loadRightClickNavigationPreference()
+
     // Load initial state and features from storage
     const hostname = window.location.hostname
     const config = await StorageUtils.getSiteConfig(hostname)
     initialize(config.enabled, config.features)
   })
+
+  // Heuristic: if a navigation/unload happens immediately after a right-click,
+  // remember to preventDefault on right-click mouse events for this session.
+  function handlePossibleRightClickNavigation() {
+    if (!features.contextMenu) return
+    if (!lastRightClickAt) return
+    if (performance.now() - lastRightClickAt > PREVENT_RIGHT_CLICK_NAV_WINDOW_MS) return
+    shouldPreventRightClickNavigation = true
+    persistRightClickNavigationPreference()
+  }
+
+  window.addEventListener('beforeunload', handlePossibleRightClickNavigation, true)
+  window.addEventListener('pagehide', handlePossibleRightClickNavigation, true)
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

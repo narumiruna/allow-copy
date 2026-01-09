@@ -48,6 +48,38 @@ A test page is included in the repository at `test-restriction.html` with multip
 
 ## Phase 2: Granular Feature Control Tests
 
+### Advanced Options Regression Tests
+
+Use `test-restriction.html` (or a known restricted site) and verify each feature independently:
+
+1. **Right-click only**:
+
+   - [ ] Enable extension
+   - [ ] In Advanced Options: uncheck **Enable text selection**
+   - [ ] Keep **Enable right-click menu** checked
+   - [ ] Verify right-click context menu still works
+
+2. **Text selection only**:
+
+   - [ ] Enable extension
+   - [ ] In Advanced Options: check **Enable text selection**
+   - [ ] Uncheck **Enable right-click menu**
+   - [ ] Verify text selection works
+   - [ ] Verify right-click is blocked by the site (or at least not force-enabled by the extension)
+
+3. **Copy/cut only**:
+
+   - [ ] Enable extension
+   - [ ] Uncheck **Enable copy/cut operations**
+   - [ ] Verify Ctrl+C / Copy is blocked again on the test page
+   - [ ] Re-check and verify Ctrl+C works
+
+4. **Cursor only**:
+   - [ ] Enable extension on a site with custom cursor styling
+   - [ ] Uncheck **Restore cursor styles**
+   - [ ] Verify the site’s custom cursor remains
+   - [ ] Re-check and verify cursor normalizes
+
 ### Advanced Options UI
 
 1. **Advanced Options Visibility**:
@@ -87,6 +119,12 @@ A test page is included in the repository at `test-restriction.html` with multip
    - [ ] Verify "Restore cursor" is still unchecked
    - [ ] Reload page
    - [ ] Verify feature settings persist
+
+6. **Advanced Options Expand State Persistence**:
+   - [ ] Expand/collapse Advanced Options
+   - [ ] Close popup
+   - [ ] Reopen popup
+   - [ ] Verify Advanced Options remains in the last expanded/collapsed state
 
 ### Backward Compatibility
 
