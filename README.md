@@ -4,38 +4,18 @@ A Chrome extension that enables copying and text selection on websites that disa
 
 ## Features
 
-### Core Functionality
-
-- ✅ Enable right-click context menu on all websites
-- ✅ Enable text selection and copying
-- ✅ Bypass common JavaScript tricks that prevent these actions
-- ✅ Toggle on/off per-site with a simple button in the extension popup
-- ✅ Prevents conflicts with custom right-click handlers on websites
-- ✅ Works automatically on enabled sites
-
-### Restriction Detection (Phase 1)
-
-- 🔍 Automatically detects CSS-based restrictions (user-select, pointer-events, cursor)
-- 🔍 Automatically detects JavaScript-based restrictions (contextmenu, selectstart, copy handlers)
-- ⚡ Shows detected restrictions in popup with clear indicators
-- ⚡ Displays enabled features in real-time
-
-### Advanced Options (Phase 2)
-
-- ⚙️ Granular per-site feature control via Advanced Options
-- ⚙️ Selectively enable/disable individual features:
-  - Enable text selection
-  - Enable right-click menu
-  - Enable copy/cut operations
-  - Restore cursor styles
-- ⚙️ Changes take effect immediately without page reload
-- ⚙️ Advanced Options expanded by default for easy access
-
-### Privacy & Sync
-
-- 🔒 Privacy-first: Uses activeTab permission (no broad website access)
-- ☁️ Settings are saved and synced across devices
-- 🎯 Per-site feature preferences persist automatically
+- Per-site opt-in toggle (disabled by default)
+- Restore interactions (configurable per site):
+  - Text selection
+  - Right-click context menu
+  - Copy/cut operations
+  - Cursor normalization
+- Detect restrictions and show them in the popup:
+  - CSS: `user-select`, `pointer-events`, cursor styles
+  - JS: document-level handlers like `oncontextmenu`, `onselectstart`, `oncopy`
+- Advanced Options update immediately (when enabled) and are saved per site via `chrome.storage.sync`
+- ✓ badge indicator when enabled for the current site
+- Privacy-first permission model: `activeTab` (no `<all_urls>` host permissions)
 
 ## Installation
 
@@ -62,18 +42,20 @@ A Chrome extension that enables copying and text selection on websites that disa
 The extension uses the `activeTab` permission model for enhanced privacy and security:
 
 - When you click the extension icon, it gains temporary access to the current tab
-- The content script is injected dynamically only on sites where you've enabled it
-- For enabled sites, the script auto-injects on navigation to maintain functionality
+- The popup injects the content script into the current page to detect restrictions and (optionally) apply fixes
+- For sites you've enabled, the background script attempts to re-inject on navigation to maintain functionality
 - No broad permissions are requested - the extension only works where you want it
+
+If the extension doesn’t apply automatically after navigation, open the popup once on that page to grant access and re-inject.
 
 The content script:
 
 - Intercepts and stops propagation of events that websites use to disable right-clicking
-- **Blocks navigation on right-click** by preventing default behavior on `mousedown`/`mouseup`/`click` events when right mouse button is detected (e.g., comic websites where right-click navigates pages)
+- **Avoids right-click navigation** on sites that hijack right-click (automatically learns this per tab session and then prevents default on right-button `mousedown`/`mouseup`)
 - **Allows browser context menu** by not preventing default on `contextmenu` event
-- Overrides CSS properties that prevent text selection
+- Overrides CSS properties that prevent text selection (and can normalize cursor styles)
 - Prevents websites from overriding browser default behaviors
-- Maintains these protections dynamically as pages update
+- Re-injects its override style if the page removes it
 - Can be toggled on/off per-site via the extension popup
 
 ## Usage
@@ -89,7 +71,7 @@ The content script:
 
 When you open the popup, you'll see:
 
-- **🔍 Detected Restrictions**: Lists what restrictions the website has applied
+- **🔍 Detected Restrictions**: Lists what restrictions the website has applied (or "No restrictions detected")
 
   - Text selection disabled (CSS)
   - Right-click menu blocked (JavaScript)
@@ -97,7 +79,7 @@ When you open the popup, you'll see:
   - Mouse cursor restrictions
   - Mouse interaction disabled (CSS)
 
-- **⚡ Enabled Features**: Shows what the extension is actively doing (only when enabled)
+- **⚡ Enabled Features**: Shows which features are configured for this site
   - Text selection restored
   - Right-click menu restored
   - Copy/cut operations enabled
@@ -105,7 +87,7 @@ When you open the popup, you'll see:
 
 ### Using Advanced Options
 
-The **Advanced Options** section (visible when extension is enabled) lets you control individual features:
+The **Advanced Options** section lets you control individual features for the current site (you can configure it even while the site is disabled):
 
 1. **Enable text selection**: Toggle CSS and event-based text selection blocking
 2. **Enable right-click menu**: Toggle context menu blocking
@@ -117,7 +99,7 @@ The **Advanced Options** section (visible when extension is enabled) lets you co
 - Changes take effect **immediately** without page reload
 - Settings are saved **per-site** and synced across devices
 - All features enabled by default when you turn on the extension
-- Advanced Options is **expanded by default** for easy access
+- Advanced Options expand/collapse state is **remembered**
 
 ### Using the Extension
 
@@ -134,7 +116,8 @@ Once enabled for a site, the extension works automatically:
 - Each website has its own enable/disable setting
 - Feature preferences are saved per-site
 - Settings are saved and synced across your devices
-- The extension blocks website navigation triggered by right-click while still allowing the browser's context menu
+- Some sites use CSS like `pointer-events: none`; the extension detects this but does not currently override it
+- The extension can block website navigation triggered by right-click while still allowing the browser's context menu
 
 ## Privacy & Security
 
@@ -173,7 +156,7 @@ After making changes to the code:
 3. Reload any test web pages
 4. Click the extension icon to open the popup and enable it for the test site
 5. Test that the functionality works (right-click, text selection, copying)
-6. Navigate away and back to verify auto-injection on enabled sites
+6. Navigate away and back to verify functionality; if it doesn’t apply automatically, open the popup once to re-inject
 7. Test the toggle switch to verify enable/disable functionality
 8. Check that the badge shows a green checkmark (✓) on enabled sites
 
@@ -183,7 +166,7 @@ After making changes to the code:
 
 - **manifest.json**: Extension configuration with `activeTab`, `storage`, `scripting`, and `webNavigation` permissions
 - **background.js**: Service worker that manages badge updates, tab monitoring, and content script injection
-  - Auto-injects content script on navigation for enabled sites
+  - Attempts to auto-inject content script on navigation for enabled sites
   - Updates badge indicator when switching tabs or navigating
   - Prevents duplicate injection with ping/pong mechanism
   - Handles storage migration for backward compatibility
