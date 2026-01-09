@@ -4,14 +4,38 @@ A Chrome extension that enables copying and text selection on websites that disa
 
 ## Features
 
+### Core Functionality
+
 - ✅ Enable right-click context menu on all websites
 - ✅ Enable text selection and copying
 - ✅ Bypass common JavaScript tricks that prevent these actions
 - ✅ Toggle on/off per-site with a simple button in the extension popup
 - ✅ Prevents conflicts with custom right-click handlers on websites
 - ✅ Works automatically on enabled sites
-- ✅ Settings are saved and synced across devices
-- ✅ Privacy-first: Uses activeTab permission (no broad website access)
+
+### Restriction Detection (Phase 1)
+
+- 🔍 Automatically detects CSS-based restrictions (user-select, pointer-events, cursor)
+- 🔍 Automatically detects JavaScript-based restrictions (contextmenu, selectstart, copy handlers)
+- ⚡ Shows detected restrictions in popup with clear indicators
+- ⚡ Displays enabled features in real-time
+
+### Advanced Options (Phase 2)
+
+- ⚙️ Granular per-site feature control via Advanced Options
+- ⚙️ Selectively enable/disable individual features:
+  - Enable text selection
+  - Enable right-click menu
+  - Enable copy/cut operations
+  - Restore cursor styles
+- ⚙️ Changes take effect immediately without page reload
+- ⚙️ Advanced Options expanded by default for easy access
+
+### Privacy & Sync
+
+- 🔒 Privacy-first: Uses activeTab permission (no broad website access)
+- ☁️ Settings are saved and synced across devices
+- 🎯 Per-site feature preferences persist automatically
 
 ## Installation
 
@@ -61,6 +85,40 @@ The content script:
 3. Toggle the switch to **ON** to enable the extension for that site
 4. The extension will show a green checkmark (✓) badge when enabled
 
+### Viewing Detected Restrictions
+
+When you open the popup, you'll see:
+
+- **🔍 Detected Restrictions**: Lists what restrictions the website has applied
+
+  - Text selection disabled (CSS)
+  - Right-click menu blocked (JavaScript)
+  - Copy/cut operations blocked
+  - Mouse cursor restrictions
+  - Mouse interaction disabled (CSS)
+
+- **⚡ Enabled Features**: Shows what the extension is actively doing (only when enabled)
+  - Text selection restored
+  - Right-click menu restored
+  - Copy/cut operations enabled
+  - Cursor behavior normalized
+
+### Using Advanced Options
+
+The **Advanced Options** section (visible when extension is enabled) lets you control individual features:
+
+1. **Enable text selection**: Toggle CSS and event-based text selection blocking
+2. **Enable right-click menu**: Toggle context menu blocking
+3. **Enable copy/cut operations**: Toggle clipboard operation blocking
+4. **Restore cursor styles**: Toggle cursor style restoration (disable if you want to keep site's custom cursor)
+
+**Features:**
+
+- Changes take effect **immediately** without page reload
+- Settings are saved **per-site** and synced across devices
+- All features enabled by default when you turn on the extension
+- Advanced Options is **expanded by default** for easy access
+
 ### Using the Extension
 
 Once enabled for a site, the extension works automatically:
@@ -68,11 +126,13 @@ Once enabled for a site, the extension works automatically:
 1. Visit any website where you've enabled the extension
 2. Right-click anywhere on the page - the browser's context menu will appear!
 3. Select and copy text - it will work!
+4. Use Advanced Options to fine-tune which features you want enabled
 
 **Note:**
 
 - The extension is disabled by default for all sites (opt-in model for your privacy)
 - Each website has its own enable/disable setting
+- Feature preferences are saved per-site
 - Settings are saved and synced across your devices
 - The extension blocks website navigation triggered by right-click while still allowing the browser's context menu
 
@@ -126,30 +186,53 @@ After making changes to the code:
   - Auto-injects content script on navigation for enabled sites
   - Updates badge indicator when switching tabs or navigating
   - Prevents duplicate injection with ping/pong mechanism
+  - Handles storage migration for backward compatibility
+- **storage-utils.js**: Storage utilities for managing site configurations
+  - Automatic migration from old boolean format to new object format
+  - Functions for reading/writing site configs with backward compatibility
+  - Per-site feature preferences management
 - **content.js**: Main functionality script injected into web pages
+  - Detects CSS and JavaScript-based restrictions before applying modifications
   - Intercepts mouse events in capture phase to prevent website handlers
   - Handles left-click (stops propagation to allow text selection)
   - Handles right-click (prevents navigation while allowing context menu)
-  - Overrides CSS properties that disable text selection
+  - Applies features selectively based on Advanced Options settings
+  - Overrides CSS properties dynamically based on enabled features
   - Uses MutationObserver to maintain style overrides
-- **popup.html/popup.js**: UI for toggling extension per-site
+  - Real-time feature updates without page reload
+- **popup.html/popup.js/popup.css**: UI for toggling extension per-site
+  - Displays detected restrictions and enabled features
+  - Advanced Options for granular feature control
+  - Real-time updates when toggling features
+  - Per-site settings persistence
 
 ### File Structure
 
 ```
 .
-├── manifest.json      # Extension manifest (Manifest V3)
-├── background.js      # Background service worker
-├── content.js         # Content script (main functionality)
-├── popup.html         # Extension popup UI
-├── popup.js           # Popup logic and state management
-├── icon.svg           # Icon source (vector)
-├── icon16.png         # 16x16 toolbar icon
-├── icon48.png         # 48x48 extension management icon
-├── icon128.png        # 128x128 Chrome Web Store icon
-├── Makefile           # Build automation
-├── README.md          # This file
-└── CLAUDE.md          # Detailed technical documentation
+├── docs/                      # Documentation
+│   └── TESTING.md             # Testing instructions
+├── promo/                     # Promotional images
+│   ├── PROMOTIONAL_IMAGES.md  # Image specifications
+│   ├── convert.sh             # SVG to PNG converter
+│   ├── promo-screenshot.svg   # Screenshot (1280x800)
+│   ├── promo-tile.svg         # Small tile (440x280)
+│   └── promo-marquee.svg      # Marquee (1400x560)
+├── manifest.json              # Extension manifest (Manifest V3)
+├── background.js              # Background service worker
+├── storage-utils.js           # Storage utilities with migration
+├── content.js                 # Content script (main functionality)
+├── popup.html                 # Extension popup UI
+├── popup.js                   # Popup logic and state management
+├── popup.css                  # Popup styles
+├── test-restriction.html      # Test page with restrictions
+├── icon.svg                   # Icon source (vector)
+├── icon16.png                 # 16x16 toolbar icon
+├── icon48.png                 # 48x48 extension management icon
+├── icon128.png                # 128x128 Chrome Web Store icon
+├── Makefile                   # Build automation
+├── README.md                  # This file
+└── CLAUDE.md                  # Detailed technical documentation
 ```
 
 ## License
