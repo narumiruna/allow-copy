@@ -14,6 +14,121 @@ function updateStatus(enabled) {
   }
 }
 
+// Update detection info display
+function updateDetectionInfo(detectionResults, isEnabled) {
+  const detectedSection = document.getElementById('detectedRestrictions')
+  const enabledSection = document.getElementById('enabledFeatures')
+
+  if (!detectionResults) {
+    if (detectedSection) detectedSection.style.display = 'none'
+    if (enabledSection) enabledSection.style.display = 'none'
+    return
+  }
+
+  const { cssRestrictions, jsRestrictions } = detectionResults
+  const hasRestrictions =
+    cssRestrictions.userSelect ||
+    cssRestrictions.pointerEvents ||
+    cssRestrictions.cursor ||
+    jsRestrictions.contextmenu ||
+    jsRestrictions.selectstart ||
+    jsRestrictions.copy
+
+  // Always show detected restrictions if there are any
+  if (detectedSection) {
+    const list = detectedSection.querySelector('.restriction-list')
+    if (list) {
+      list.innerHTML = ''
+
+      if (!hasRestrictions) {
+        detectedSection.style.display = 'none'
+      } else {
+        detectedSection.style.display = 'block'
+
+        if (cssRestrictions.userSelect) {
+          const item = document.createElement('li')
+          item.textContent = 'Text selection disabled (CSS)'
+          list.appendChild(item)
+        }
+
+        if (jsRestrictions.contextmenu) {
+          const item = document.createElement('li')
+          item.textContent = 'Right-click menu blocked (JavaScript)'
+          list.appendChild(item)
+        }
+
+        if (jsRestrictions.copy || jsRestrictions.selectstart) {
+          const item = document.createElement('li')
+          item.textContent = 'Copy/cut operations blocked'
+          list.appendChild(item)
+        }
+
+        if (cssRestrictions.cursor) {
+          const item = document.createElement('li')
+          item.textContent = 'Mouse cursor restrictions'
+          list.appendChild(item)
+        }
+
+        if (cssRestrictions.pointerEvents) {
+          const item = document.createElement('li')
+          item.textContent = 'Mouse interaction disabled (CSS)'
+          list.appendChild(item)
+        }
+      }
+    }
+  }
+
+  // Show enabled features only when extension is enabled AND there are restrictions
+  if (enabledSection) {
+    if (!isEnabled || !hasRestrictions) {
+      enabledSection.style.display = 'none'
+    } else {
+      enabledSection.style.display = 'block'
+      const list = enabledSection.querySelector('.feature-list')
+      if (list) {
+        list.innerHTML = ''
+
+        if (cssRestrictions.userSelect) {
+          const item = document.createElement('li')
+          item.textContent = 'Text selection restored'
+          list.appendChild(item)
+        }
+
+        if (jsRestrictions.contextmenu) {
+          const item = document.createElement('li')
+          item.textContent = 'Right-click menu restored'
+          list.appendChild(item)
+        }
+
+        if (jsRestrictions.copy || jsRestrictions.selectstart) {
+          const item = document.createElement('li')
+          item.textContent = 'Copy/cut operations enabled'
+          list.appendChild(item)
+        }
+
+        if (cssRestrictions.cursor) {
+          const item = document.createElement('li')
+          item.textContent = 'Cursor behavior normalized'
+          list.appendChild(item)
+        }
+      }
+    }
+  }
+}
+
+// Get detection info from content script
+async function getDetectionInfo(tabId) {
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, {
+      action: 'getDetectionInfo',
+    })
+    return response
+  } catch (_e) {
+    // Content script not injected or tab doesn't support it
+    return null
+  }
+}
+
 // Get current tab
 async function getCurrentTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -167,11 +282,26 @@ async function init() {
   toggle.checked = enabled
   updateStatus(enabled)
 
+  // Get detection info from content script
+  const detectionInfo = await getDetectionInfo(tab.id)
+  if (detectionInfo) {
+    updateDetectionInfo(detectionInfo.detectionResults, enabled)
+  }
+
   // Listen for toggle changes
   toggle.addEventListener('change', async () => {
     const newState = toggle.checked
     try {
       await toggleSite(tab, hostname, newState)
+
+      // Update detection info display after toggle
+      // Use newState instead of waiting for content script to update
+      const updatedDetectionInfo = await getDetectionInfo(tab.id)
+      if (updatedDetectionInfo) {
+        // Use newState (what user wants) instead of isEnabled from content script
+        // to avoid race condition where content script hasn't updated yet
+        updateDetectionInfo(updatedDetectionInfo.detectionResults, newState)
+      }
     } catch (e) {
       console.error('Failed to toggle site state:', e)
       // Revert UI state since the change was not successfully applied

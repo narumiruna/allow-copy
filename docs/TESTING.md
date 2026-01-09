@@ -1,5 +1,51 @@
 # Testing Checklist for Allow Copy Extension
 
+## Phase 1: Restriction Detection Tests
+
+### Using the Test Page
+
+A test page is included in the repository at `test-restriction.html` with multiple restrictions:
+
+1. **Setup**:
+
+   - [ ] Open `test-restriction.html` in Chrome (use `file://` protocol or a local server)
+   - [ ] Click extension icon to open popup
+
+2. **Test Detection (Extension Disabled)**:
+
+   - [ ] Verify toggle is OFF
+   - [ ] Verify "Detected Restrictions" section appears with 🔍 icon
+   - [ ] Verify it lists:
+     - "Text selection disabled (CSS)"
+     - "Right-click menu blocked (JavaScript)"
+     - "Copy/cut operations blocked"
+   - [ ] Verify "Enabled Features" section is hidden (not shown when disabled)
+
+3. **Test Detection (Extension Enabled)**:
+
+   - [ ] Toggle extension ON
+   - [ ] Verify "Detected Restrictions" section still shows the same restrictions
+   - [ ] Verify "Enabled Features" section appears with ⚡ icon
+   - [ ] Verify it lists:
+     - "Text selection restored"
+     - "Right-click menu restored"
+     - "Copy/cut operations enabled"
+
+4. **Test on Real Sites**:
+
+   - [ ] Visit a site with no restrictions (e.g., example.com)
+   - [ ] Open popup, verify both detection sections are hidden
+   - [ ] Visit a site with restrictions (e.g., some news sites)
+   - [ ] Open popup, verify detected restrictions are shown
+   - [ ] Enable extension, verify enabled features are shown
+
+5. **Test Detection Accuracy**:
+   - [ ] On test page, verify you cannot select text before enabling
+   - [ ] Enable extension, verify you can now select text
+   - [ ] Verify right-click menu works
+   - [ ] Verify copy (Ctrl+C) works
+   - [ ] Disable extension, verify restrictions return
+
 ## Basic Functionality Tests
 
 ### 1. Installation and First Use
