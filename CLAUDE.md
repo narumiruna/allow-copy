@@ -68,12 +68,29 @@ The extension uses event capturing (third parameter `true`) to intercept events 
 
 ### State Management
 
-- **Per-site Settings**: Extension is enabled/disabled on a per-site basis
-- **Storage Schema**: `chrome.storage.sync` stores `{sites: {[hostname]: boolean}}`
+- **Per-site Settings**: Extension is enabled/disabled on a per-site basis with granular feature control
+- **Storage Schema**: `chrome.storage.sync` stores site configurations with backward compatibility
+  ```javascript
+  {
+    sites: {
+      "example.com": {
+        enabled: true,
+        features: {
+          textSelection: true,      // Enable text selection
+          contextMenu: true,         // Enable right-click menu
+          copyPaste: true,          // Enable copy/cut operations
+          cursor: true              // Restore cursor styles
+        }
+      }
+    }
+  }
+  ```
   - Key is the hostname (e.g., `"example.com"`)
-  - Value is `true` if enabled for that site
+  - Value is an object with `enabled` and `features` properties
+  - **Backward Compatibility**: Old boolean format (`true`/`false`) is automatically migrated to new object format
   - Sites not in the object are disabled by default
 - **Default Behavior**: Extension is disabled by default (opt-in model for privacy)
+- **Storage Utilities**: `storage-utils.js` provides functions for reading/writing with automatic migration
 - **Popup Behavior**:
   - Injects content script using `activeTab` permission when opened
   - Shows current site's hostname
@@ -105,9 +122,9 @@ The extension uses event capturing (third parameter `true`) to intercept events 
 
 **Privacy Benefits**: This permission model avoids requesting broad `<all_urls>` access, satisfying Chrome Web Store requirements and providing better user privacy.
 
-## Planned Features
+## Implemented Features
 
-### Phase 1: Restriction Detection and Status Display (Priority)
+### Phase 1: Restriction Detection and Status Display ✅ COMPLETED
 
 Enhance the popup UI to display detailed information about detected restrictions and enabled features:
 
@@ -149,7 +166,7 @@ Enhance the popup UI to display detailed information about detected restrictions
 - Debugging: Helps identify if extension is working correctly
 - Education: Users learn what restrictions websites apply
 
-### Phase 2: Granular Feature Control (Future)
+### Phase 2: Granular Feature Control ✅ COMPLETED
 
 Allow users to selectively enable/disable specific features per site:
 
@@ -326,10 +343,12 @@ cairosvg.svg2png(url='icon.svg', write_to='icon128.png', output_width=128, outpu
 │   └── promo-marquee.svg      # Marquee image (1400x560)
 ├── manifest.json      # Extension manifest
 ├── background.js      # Background service worker (badge updates, injection)
-├── content.js         # Content script (main logic)
+├── storage-utils.js   # Storage utilities (migration, backward compatibility)
+├── content.js         # Content script (main logic with granular features)
 ├── popup.html         # Extension popup UI
-├── popup.js           # Popup logic
+├── popup.js           # Popup logic with Advanced Options
 ├── popup.css          # Popup styles
+├── test-restriction.html  # Test page with restrictions (for development)
 ├── icon.svg           # Icon source (vector)
 ├── icon16.png         # Extension icon (16x16)
 ├── icon48.png         # Extension icon (48x48)

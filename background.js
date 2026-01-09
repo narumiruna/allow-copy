@@ -1,6 +1,9 @@
 // Background service worker for Allow Copy extension
 // Handles badge updates and content script injection
 
+// Import storage utilities
+importScripts('storage-utils.js')
+
 // Constants
 const BADGE_CONFIG = {
   ENABLED: {
@@ -33,15 +36,13 @@ function parseAndValidateUrl(url) {
 
 // Utility: Get enabled sites from storage
 async function getEnabledSites() {
-  const result = await chrome.storage.sync.get(['sites'])
-  return result.sites || {}
+  return await StorageUtils.getAllSites()
 }
 
 // Utility: Check if site is enabled
 async function isSiteEnabled(hostname) {
   if (!hostname) return false
-  const sites = await getEnabledSites()
-  return sites[hostname] === true
+  return await StorageUtils.isSiteEnabled(hostname)
 }
 
 // Inject content script into a tab
@@ -58,10 +59,10 @@ async function injectContentScript(tabId) {
       // Continue to injection
     }
 
-    // Inject the content script
+    // Inject storage utilities first, then content script
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
-      files: ['content.js'],
+      files: ['storage-utils.js', 'content.js'],
       injectImmediately: true,
     })
 
@@ -180,6 +181,9 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 // On extension install/update/reload, inject into already-open tabs with enabled sites
 chrome.runtime.onInstalled.addListener(async () => {
   try {
+    // Migrate storage from old format to new format if needed
+    await StorageUtils.migrateStorage()
+
     const sites = await getEnabledSites()
     const tabs = await chrome.tabs.query({})
 
@@ -187,8 +191,8 @@ chrome.runtime.onInstalled.addListener(async () => {
       const hostname = parseAndValidateUrl(tab.url)
       if (!hostname) continue
 
-      // Inject if site is enabled
-      if (sites[hostname] === true) {
+      // Inject if site is enabled (check the enabled property in new format)
+      if (sites[hostname]?.enabled) {
         await injectContentScript(tab.id)
       }
 

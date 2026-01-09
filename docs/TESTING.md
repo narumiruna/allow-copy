@@ -46,6 +46,64 @@ A test page is included in the repository at `test-restriction.html` with multip
    - [ ] Verify copy (Ctrl+C) works
    - [ ] Disable extension, verify restrictions return
 
+## Phase 2: Granular Feature Control Tests
+
+### Advanced Options UI
+
+1. **Advanced Options Visibility**:
+
+   - [ ] Open popup on a disabled site
+   - [ ] Verify "Advanced Options" section is hidden
+   - [ ] Enable extension for the site
+   - [ ] Verify "Advanced Options" section appears
+
+2. **Expand/Collapse Functionality**:
+
+   - [ ] Click "Advanced Options" header
+   - [ ] Verify content expands and arrow rotates 90°
+   - [ ] Click again, verify content collapses
+
+3. **Feature Toggles**:
+
+   - [ ] Expand Advanced Options
+   - [ ] Verify all four feature checkboxes are checked by default
+   - [ ] Uncheck "Enable text selection"
+   - [ ] Try to select text on page - should not work
+   - [ ] Re-check "Enable text selection"
+   - [ ] Verify text selection works again
+
+4. **Individual Feature Testing**:
+
+   - [ ] **Text Selection**: Uncheck, verify cannot select text
+   - [ ] **Right-click Menu**: Uncheck, verify right-click is blocked
+   - [ ] **Copy/Cut Operations**: Uncheck, verify Ctrl+C doesn't work
+   - [ ] **Restore Cursor**: Uncheck on site with custom cursor, verify cursor remains custom
+
+5. **Feature Persistence**:
+
+   - [ ] Disable "Restore cursor" feature
+   - [ ] Close popup
+   - [ ] Reopen popup
+   - [ ] Verify "Restore cursor" is still unchecked
+   - [ ] Reload page
+   - [ ] Verify feature settings persist
+
+### Backward Compatibility
+
+1. **Migration from Old Format**:
+
+   - [ ] Note: This requires manual storage manipulation or an old version
+   - [ ] If possible, set storage to old boolean format: `{sites: {"example.com": true}}`
+   - [ ] Reload extension
+   - [ ] Open popup on example.com
+   - [ ] Verify all features are enabled by default
+   - [ ] Verify Advanced Options works correctly
+
+2. **Mixed Format Compatibility**:
+   - [ ] Have some sites in old format (boolean), some in new format (object)
+   - [ ] Verify both work correctly
+   - [ ] Verify badge shows correctly for both types
+
 ## Basic Functionality Tests
 
 ### 1. Installation and First Use

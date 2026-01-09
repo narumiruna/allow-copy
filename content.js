@@ -25,6 +25,12 @@
 
   // State
   let isEnabled = true
+  let features = {
+    textSelection: true,
+    contextMenu: true,
+    copyPaste: true,
+    cursor: true,
+  }
   let eventListeners = []
   let observer = null
   let observerThrottleTimer = null
@@ -149,31 +155,44 @@
     return results
   }
 
-  // Function to enable all document interactions
+  // Function to enable document interactions based on enabled features
   function enableInteractions() {
     // First, remove any existing listeners to avoid duplicates
     disableInteractions()
 
-    // Mouse events (mousedown, mouseup, click) - reuse single handler
-    const mouseEvents = ['mousedown', 'mouseup', 'click']
-    const mouseHandler = createMouseEventHandler()
-    mouseEvents.forEach((eventType) => {
-      document.addEventListener(eventType, mouseHandler, true)
-      eventListeners.push({ type: eventType, handler: mouseHandler })
-    })
+    // Mouse events for text selection (textSelection feature)
+    if (features.textSelection) {
+      const mouseEvents = ['mousedown', 'mouseup', 'click']
+      const mouseHandler = createMouseEventHandler()
+      mouseEvents.forEach((eventType) => {
+        document.addEventListener(eventType, mouseHandler, true)
+        eventListeners.push({ type: eventType, handler: mouseHandler })
+      })
+    }
 
-    // Context menu event - reuse single handler
-    const contextmenuHandler = createStopPropagationHandler()
-    document.addEventListener('contextmenu', contextmenuHandler, true)
-    eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler })
+    // Context menu event (contextMenu feature)
+    if (features.contextMenu) {
+      const contextmenuHandler = createStopPropagationHandler()
+      document.addEventListener('contextmenu', contextmenuHandler, true)
+      eventListeners.push({ type: 'contextmenu', handler: contextmenuHandler })
+    }
 
-    // Text selection and clipboard events - reuse single handler
-    const textEvents = ['selectstart', 'copy', 'cut']
-    const textEventsHandler = (e) => e.stopPropagation()
-    textEvents.forEach((eventType) => {
-      document.addEventListener(eventType, textEventsHandler, true)
-      eventListeners.push({ type: eventType, handler: textEventsHandler })
-    })
+    // Text selection event (textSelection feature)
+    if (features.textSelection) {
+      const selectstartHandler = (e) => e.stopPropagation()
+      document.addEventListener('selectstart', selectstartHandler, true)
+      eventListeners.push({ type: 'selectstart', handler: selectstartHandler })
+    }
+
+    // Copy/cut events (copyPaste feature)
+    if (features.copyPaste) {
+      const copyEvents = ['copy', 'cut']
+      const copyPasteHandler = (e) => e.stopPropagation()
+      copyEvents.forEach((eventType) => {
+        document.addEventListener(eventType, copyPasteHandler, true)
+        eventListeners.push({ type: eventType, handler: copyPasteHandler })
+      })
+    }
   }
 
   // Function to disable all interactions
@@ -185,18 +204,37 @@
     eventListeners = []
   }
 
-  // Function to inject CSS that enables text selection
+  // Function to inject CSS that enables text selection and cursor restoration
   function injectStyle() {
     if (!isEnabled) return
 
-    const style = document.createElement('style')
-    style.textContent = `
-      * {
+    // Build CSS based on enabled features
+    const cssRules = []
+
+    // Text selection CSS (textSelection feature)
+    if (features.textSelection) {
+      cssRules.push(`
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
         user-select: text !important;
+      `)
+    }
+
+    // Cursor restoration CSS (cursor feature)
+    if (features.cursor) {
+      cssRules.push(`
         cursor: auto !important;
+      `)
+    }
+
+    // Only inject style if there are rules to apply
+    if (cssRules.length === 0) return
+
+    const style = document.createElement('style')
+    style.textContent = `
+      * {
+        ${cssRules.join('\n')}
       }
     `
     style.id = STYLE_ID
@@ -227,16 +265,32 @@
     addStyle()
   }
 
-  // Function to override document properties
+  // Function to override document properties based on enabled features
   function overrideDocumentProperties() {
     DOCUMENT_PROPERTIES.forEach((prop) => {
-      try {
-        Object.defineProperty(document, prop, {
-          get: () => null,
-          set: () => {},
-        })
-      } catch (_e) {
-        // Some properties might not be configurable
+      // Check if the feature for this property is enabled
+      let shouldOverride = false
+
+      if (prop === 'oncontextmenu' && features.contextMenu) {
+        shouldOverride = true
+      } else if (prop === 'onselectstart' && features.textSelection) {
+        shouldOverride = true
+      } else if (
+        (prop === 'oncopy' || prop === 'oncut' || prop === 'onpaste') &&
+        features.copyPaste
+      ) {
+        shouldOverride = true
+      }
+
+      if (shouldOverride) {
+        try {
+          Object.defineProperty(document, prop, {
+            get: () => null,
+            set: () => {},
+          })
+        } catch (_e) {
+          // Some properties might not be configurable
+        }
       }
     })
   }
@@ -314,9 +368,14 @@
     startObserver()
   }
 
-  // Function to initialize extension
-  function initialize(enabled) {
+  // Function to initialize extension with feature settings
+  function initialize(enabled, featureSettings = null) {
     isEnabled = enabled
+
+    // Update features if provided
+    if (featureSettings) {
+      features = { ...StorageUtils.DEFAULT_FEATURES, ...featureSettings }
+    }
 
     if (isEnabled) {
       // First, ensure clean state by removing any previous setup
@@ -360,22 +419,21 @@
   }
 
   // Perform initial detection and initialize
-  runWhenReady(() => {
+  runWhenReady(async () => {
     // Perform initial detection before any modifications
     // This must be done before initialize() applies CSS changes
     detectRestrictions()
 
-    // Load initial state from storage
+    // Load initial state and features from storage
     const hostname = window.location.hostname
-    chrome.storage.sync.get(['sites'], (result) => {
-      const sites = result.sites || {}
-      const enabled = sites[hostname] === true // Default to false (disabled)
-      initialize(enabled)
-    })
+    const config = await StorageUtils.getSiteConfig(hostname)
+    initialize(config.enabled, config.features)
   })
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    const hostname = window.location.hostname
+
     if (request.action === 'ping') {
       // Respond to ping to indicate content script is injected
       sendResponse({ pong: true })
@@ -388,12 +446,23 @@
       sendResponse({
         detectionResults: results,
         isEnabled: isEnabled,
+        features: features,
       })
       return true
     }
 
     if (request.action === 'toggleSite' && request.hostname === hostname) {
-      initialize(request.enabled)
+      // Features may be included in request, or use existing/default
+      const requestFeatures = request.features || null
+      initialize(request.enabled, requestFeatures)
+      return true
+    }
+
+    if (request.action === 'updateFeatures' && request.hostname === hostname) {
+      // Update features while keeping enabled state
+      if (isEnabled && request.features) {
+        initialize(true, request.features)
+      }
       return true
     }
   })

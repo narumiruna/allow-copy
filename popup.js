@@ -1,5 +1,8 @@
 // Popup script for Allow Copy extension
 
+// State variable to track current features
+let currentFeatures = null
+
 // Update status display
 function updateStatus(enabled) {
   const statusDiv = document.getElementById('status')
@@ -129,6 +132,72 @@ async function getDetectionInfo(tabId) {
   }
 }
 
+// Update Advanced Options visibility and populate checkboxes
+function updateAdvancedOptions(enabled, features) {
+  const advancedSection = document.getElementById('advancedOptions')
+  if (!advancedSection) return
+
+  // Only show Advanced Options when extension is enabled
+  if (enabled) {
+    advancedSection.style.display = 'block'
+
+    // Populate feature checkboxes
+    const featureTextSelection = document.getElementById('featureTextSelection')
+    const featureContextMenu = document.getElementById('featureContextMenu')
+    const featureCopyPaste = document.getElementById('featureCopyPaste')
+    const featureCursor = document.getElementById('featureCursor')
+
+    if (featureTextSelection) featureTextSelection.checked = features.textSelection
+    if (featureContextMenu) featureContextMenu.checked = features.contextMenu
+    if (featureCopyPaste) featureCopyPaste.checked = features.copyPaste
+    if (featureCursor) featureCursor.checked = features.cursor
+
+    // Store current features
+    currentFeatures = { ...features }
+  } else {
+    advancedSection.style.display = 'none'
+  }
+}
+
+// Setup Advanced Options expand/collapse toggle
+function setupAdvancedOptionsToggle() {
+  const advancedToggle = document.getElementById('advancedToggle')
+  const advancedContent = document.getElementById('advancedContent')
+  const advancedArrow = advancedToggle?.querySelector('.advanced-arrow')
+
+  if (!advancedToggle || !advancedContent) return
+
+  advancedToggle.addEventListener('click', () => {
+    const isExpanded = advancedContent.style.display === 'block'
+
+    if (isExpanded) {
+      advancedContent.style.display = 'none'
+      advancedArrow?.classList.remove('expanded')
+    } else {
+      advancedContent.style.display = 'block'
+      advancedArrow?.classList.add('expanded')
+    }
+  })
+}
+
+// Update features in storage and notify content script
+async function updateFeatures(tab, hostname, features) {
+  try {
+    await StorageUtils.updateSiteFeatures(hostname, features)
+    currentFeatures = { ...features }
+
+    // Notify content script
+    await chrome.tabs.sendMessage(tab.id, {
+      action: 'updateFeatures',
+      hostname,
+      features,
+    })
+  } catch (_e) {
+    // Tab doesn't have content script or error occurred
+    console.error('Failed to update features:', _e)
+  }
+}
+
 // Get current tab
 async function getCurrentTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -154,15 +223,14 @@ async function injectContentScript(tabId) {
   }
 }
 
-// Get sites from storage
-async function getSites() {
-  const result = await chrome.storage.sync.get(['sites'])
-  return result.sites || {}
+// Get site configuration from storage
+async function getSiteConfig(hostname) {
+  return await StorageUtils.getSiteConfig(hostname)
 }
 
-// Save sites to storage
-async function saveSites(sites) {
-  await chrome.storage.sync.set({ sites })
+// Update site configuration in storage
+async function setSiteConfig(hostname, enabled, features = null) {
+  await StorageUtils.setSiteConfig(hostname, enabled, features)
 }
 
 // Queue-based toggle to prevent race conditions without busy-waiting
@@ -178,20 +246,11 @@ async function processToggleQueue() {
 
   try {
     while (toggleQueue.length > 0) {
-      const { tab, hostname, enabled, resolve, reject } = toggleQueue.shift()
+      const { tab, hostname, enabled, features, resolve, reject } = toggleQueue.shift()
 
       try {
-        const sites = await getSites()
-
-        // Update this site's state
-        if (enabled) {
-          sites[hostname] = true
-        } else {
-          delete sites[hostname] // Remove from object to save space
-        }
-
-        // Save updated sites
-        await saveSites(sites)
+        // Save site configuration with features
+        await setSiteConfig(hostname, enabled, features)
         updateStatus(enabled)
 
         // Notify the current tab to update
@@ -200,6 +259,7 @@ async function processToggleQueue() {
             action: 'toggleSite',
             hostname,
             enabled,
+            features,
           })
         } catch (_e) {
           // Tab doesn't have content script, that's okay
@@ -215,9 +275,9 @@ async function processToggleQueue() {
   }
 }
 
-async function toggleSite(tab, hostname, enabled) {
+async function toggleSite(tab, hostname, enabled, features = null) {
   return new Promise((resolve, reject) => {
-    toggleQueue.push({ tab, hostname, enabled, resolve, reject })
+    toggleQueue.push({ tab, hostname, enabled, features, resolve, reject })
     // Start processing queue (non-blocking)
     // Individual operations resolve/reject their own promises
     // This catch only handles unexpected queue processing errors
@@ -276,11 +336,16 @@ async function init() {
     return
   }
 
-  // Load saved state for this site
-  const sites = await getSites()
-  const enabled = sites[hostname] === true // Default to false (disabled)
+  // Load saved configuration for this site
+  const config = await getSiteConfig(hostname)
+  const enabled = config.enabled
+  const features = config.features
   toggle.checked = enabled
   updateStatus(enabled)
+
+  // Setup Advanced Options
+  setupAdvancedOptionsToggle()
+  updateAdvancedOptions(enabled, features)
 
   // Get detection info from content script
   const detectionInfo = await getDetectionInfo(tab.id)
@@ -292,7 +357,11 @@ async function init() {
   toggle.addEventListener('change', async () => {
     const newState = toggle.checked
     try {
-      await toggleSite(tab, hostname, newState)
+      // Pass current features when toggling
+      await toggleSite(tab, hostname, newState, newState ? currentFeatures : null)
+
+      // Update Advanced Options visibility
+      updateAdvancedOptions(newState, currentFeatures || features)
 
       // Update detection info display after toggle
       // Use newState instead of waiting for content script to update
@@ -307,6 +376,26 @@ async function init() {
       // Revert UI state since the change was not successfully applied
       toggle.checked = !newState
       updateStatus(toggle.checked)
+    }
+  })
+
+  // Setup feature checkbox listeners
+  const featureCheckboxes = [
+    { id: 'featureTextSelection', key: 'textSelection' },
+    { id: 'featureContextMenu', key: 'contextMenu' },
+    { id: 'featureCopyPaste', key: 'copyPaste' },
+    { id: 'featureCursor', key: 'cursor' },
+  ]
+
+  featureCheckboxes.forEach(({ id, key }) => {
+    const checkbox = document.getElementById(id)
+    if (checkbox) {
+      checkbox.addEventListener('change', async () => {
+        if (currentFeatures) {
+          currentFeatures[key] = checkbox.checked
+          await updateFeatures(tab, hostname, currentFeatures)
+        }
+      })
     }
   })
 }
