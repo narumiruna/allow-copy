@@ -8,6 +8,7 @@ ZIP_NAME := allow-copy-$(VERSION).zip
 FILES := manifest.json \
          background.js \
          content.js \
+         storage-utils.js \
          popup.html \
          popup.js \
          popup.css \
