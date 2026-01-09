@@ -491,8 +491,8 @@
     initialize(config.enabled, config.features)
   })
 
-  // Heuristic: if a navigation/unload happens immediately after a right-click,
-  // remember to preventDefault on right-click mouse events for this session.
+  // Heuristic: if the page is hidden immediately after a right-click, remember
+  // to preventDefault on right-click mouse events for this session.
   function handlePossibleRightClickNavigation() {
     if (!features.contextMenu) return
     if (!lastRightClickAt) return
@@ -501,8 +501,14 @@
     persistRightClickNavigationPreference()
   }
 
-  window.addEventListener('beforeunload', handlePossibleRightClickNavigation, true)
-  window.addEventListener('pagehide', handlePossibleRightClickNavigation, true)
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState !== 'hidden') return
+      handlePossibleRightClickNavigation()
+    },
+    true,
+  )
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

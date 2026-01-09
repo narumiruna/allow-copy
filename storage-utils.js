@@ -102,8 +102,16 @@
     const sites = await getAllSites()
 
     if (!enabled) {
-      // Remove site from storage when disabled
-      delete sites[hostname]
+      // Keep per-site feature configuration even when disabled, so users can
+      // pre-configure Advanced Options before enabling again.
+      const existing = sites[hostname] || null
+      sites[hostname] = {
+        enabled: false,
+        features: {
+          ...DEFAULT_FEATURES,
+          ...(features || existing?.features || {}),
+        },
+      }
     } else {
       // Use provided features or default to all enabled
       sites[hostname] = {
@@ -124,10 +132,8 @@
   async function updateSiteFeatures(hostname, features) {
     const config = await getSiteConfig(hostname)
 
-    // Only update if site is enabled
-    if (config.enabled) {
-      await setSiteConfig(hostname, true, features)
-    }
+    // Update features regardless of enabled state, preserving current enabled flag.
+    await setSiteConfig(hostname, config.enabled, features)
   }
 
   /**

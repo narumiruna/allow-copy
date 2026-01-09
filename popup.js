@@ -161,26 +161,27 @@ function updateAdvancedOptions(enabled, features) {
   const advancedSection = document.getElementById('advancedOptions')
   if (!advancedSection) return
 
-  // Only show Advanced Options when extension is enabled
-  if (enabled) {
-    advancedSection.style.display = 'block'
+  // Always show Advanced Options so users can configure before enabling
+  advancedSection.style.display = 'block'
 
-    // Populate feature checkboxes
-    const featureTextSelection = document.getElementById('featureTextSelection')
-    const featureContextMenu = document.getElementById('featureContextMenu')
-    const featureCopyPaste = document.getElementById('featureCopyPaste')
-    const featureCursor = document.getElementById('featureCursor')
-
-    if (featureTextSelection) featureTextSelection.checked = features.textSelection
-    if (featureContextMenu) featureContextMenu.checked = features.contextMenu
-    if (featureCopyPaste) featureCopyPaste.checked = features.copyPaste
-    if (featureCursor) featureCursor.checked = features.cursor
-
-    // Store current features
-    currentFeatures = { ...features }
-  } else {
-    advancedSection.style.display = 'none'
+  const advancedNote = document.getElementById('advancedNote')
+  if (advancedNote) {
+    advancedNote.style.display = enabled ? 'none' : 'block'
   }
+
+  // Populate feature checkboxes
+  const featureTextSelection = document.getElementById('featureTextSelection')
+  const featureContextMenu = document.getElementById('featureContextMenu')
+  const featureCopyPaste = document.getElementById('featureCopyPaste')
+  const featureCursor = document.getElementById('featureCursor')
+
+  if (featureTextSelection) featureTextSelection.checked = features.textSelection
+  if (featureContextMenu) featureContextMenu.checked = features.contextMenu
+  if (featureCopyPaste) featureCopyPaste.checked = features.copyPaste
+  if (featureCursor) featureCursor.checked = features.cursor
+
+  // Store current features
+  currentFeatures = { ...features }
 }
 
 // Setup Advanced Options expand/collapse toggle
@@ -224,32 +225,38 @@ async function setupAdvancedOptionsToggle() {
 }
 
 // Update features in storage and notify content script
-async function updateFeatures(tab, hostname, features) {
+async function updateFeatures(tab, hostname, features, isEnabledForSite) {
   try {
     // Save to storage first
     await StorageUtils.updateSiteFeatures(hostname, features)
     currentFeatures = { ...features }
 
-    // Notify content script to apply changes immediately
-    try {
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'updateFeatures',
-        hostname,
-        features,
-      })
+    if (isEnabledForSite) {
+      // Notify content script to apply changes immediately
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'updateFeatures',
+          hostname,
+          features,
+        })
 
-      // Give content script time to apply changes (50ms should be enough)
-      await new Promise((resolve) => setTimeout(resolve, 50))
-    } catch (_msgError) {
-      // If message fails, try reloading the tab to apply changes
-      console.log('Content script not responding, reloading tab')
-      await chrome.tabs.reload(tab.id)
-    }
+        // Give content script time to apply changes (50ms should be enough)
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      } catch (_msgError) {
+        // If message fails, try reloading the tab to apply changes
+        console.log('Content script not responding, reloading tab')
+        await chrome.tabs.reload(tab.id)
+      }
 
-    // Refresh detection/features UI after applying changes
-    const updatedDetectionInfo = await getDetectionInfo(tab.id)
-    if (updatedDetectionInfo) {
-      updateDetectionInfo(updatedDetectionInfo.detectionResults, true, currentFeatures)
+      // Refresh detection/features UI after applying changes
+      const updatedDetectionInfo = await getDetectionInfo(tab.id)
+      if (updatedDetectionInfo) {
+        lastDetectionResults = updatedDetectionInfo.detectionResults
+        updateDetectionInfo(lastDetectionResults, true, currentFeatures)
+      }
+    } else if (lastDetectionResults) {
+      // Site is disabled; just update UI to reflect configured features
+      updateDetectionInfo(lastDetectionResults, false, currentFeatures)
     }
   } catch (e) {
     console.error('Failed to update features:', e)
@@ -460,7 +467,7 @@ async function init() {
       checkbox.addEventListener('change', async () => {
         if (currentFeatures) {
           currentFeatures[key] = checkbox.checked
-          await updateFeatures(tab, hostname, currentFeatures)
+          await updateFeatures(tab, hostname, currentFeatures, toggle.checked)
         }
       })
     }
