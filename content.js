@@ -28,6 +28,8 @@
   let eventListeners = []
   let observer = null
   let observerThrottleTimer = null
+  let detectionResults = null // Will be set on first detection
+  let hasDetectedOnce = false // Track if we've done initial detection
 
   // Create unified mouse event handler
   function createMouseEventHandler() {
@@ -52,6 +54,99 @@
       e.stopPropagation()
       e.stopImmediatePropagation()
     }
+  }
+
+  // Function to detect CSS-based restrictions on an element
+  function detectCSSRestrictions(element) {
+    const computed = window.getComputedStyle(element)
+    const results = {
+      userSelect: false,
+      pointerEvents: false,
+      cursor: false,
+    }
+
+    // Check user-select
+    const userSelect = computed.userSelect || computed.webkitUserSelect || computed.mozUserSelect
+    if (userSelect === 'none') {
+      results.userSelect = true
+    }
+
+    // Check pointer-events
+    if (computed.pointerEvents === 'none') {
+      results.pointerEvents = true
+    }
+
+    // Check cursor (detect if cursor is not default/auto/text)
+    const cursor = computed.cursor
+    const normalCursors = [
+      'auto',
+      'default',
+      'text',
+      'pointer',
+      'help',
+      'wait',
+      'move',
+      'crosshair',
+    ]
+    if (cursor && !normalCursors.includes(cursor)) {
+      results.cursor = true
+    }
+
+    return results
+  }
+
+  // Function to detect restrictions across the page
+  function detectRestrictions() {
+    // If we've already detected once, return the cached results
+    // This is important because our CSS modifications will interfere with detection
+    if (hasDetectedOnce && detectionResults) {
+      return detectionResults
+    }
+
+    const results = {
+      cssRestrictions: {
+        userSelect: false,
+        pointerEvents: false,
+        cursor: false,
+      },
+      jsRestrictions: {
+        contextmenu: false,
+        selectstart: false,
+        copy: false,
+      },
+    }
+
+    // Check body and common content elements for CSS restrictions
+    const elementsToCheck = [document.body, document.documentElement]
+    const contentElements = document.querySelectorAll('p, div, span, article, section, main')
+    const sampleElements = Array.from(contentElements).slice(0, 10) // Sample first 10 content elements
+
+    elementsToCheck.push(...sampleElements)
+
+    elementsToCheck.forEach((element) => {
+      if (!element) return
+      const cssResults = detectCSSRestrictions(element)
+      if (cssResults.userSelect) results.cssRestrictions.userSelect = true
+      if (cssResults.pointerEvents) results.cssRestrictions.pointerEvents = true
+      if (cssResults.cursor) results.cssRestrictions.cursor = true
+    })
+
+    // Check for JavaScript restrictions by examining document properties
+    DOCUMENT_PROPERTIES.forEach((prop) => {
+      const value = document[prop]
+      if (value !== null && value !== undefined) {
+        // Property has been set by the website
+        if (prop === 'oncontextmenu') results.jsRestrictions.contextmenu = true
+        if (prop === 'onselectstart') results.jsRestrictions.selectstart = true
+        if (prop === 'oncopy') results.jsRestrictions.copy = true
+      }
+    })
+
+    // Cache the results
+    detectionResults = results
+    hasDetectedOnce = true
+
+    return results
   }
 
   // Function to enable all document interactions
@@ -246,12 +341,37 @@
     }
   }
 
-  // Load initial state from storage
-  const hostname = window.location.hostname
-  chrome.storage.sync.get(['sites'], (result) => {
-    const sites = result.sites || {}
-    const enabled = sites[hostname] === true // Default to false (disabled)
-    initialize(enabled)
+  // Function to run when DOM is ready
+  function runWhenReady(callback) {
+    if (document.body) {
+      callback()
+    } else {
+      let attempts = 0
+      const checkReady = () => {
+        if (document.body || attempts >= RAF_MAX_ATTEMPTS) {
+          callback()
+        } else {
+          attempts++
+          requestAnimationFrame(checkReady)
+        }
+      }
+      checkReady()
+    }
+  }
+
+  // Perform initial detection and initialize
+  runWhenReady(() => {
+    // Perform initial detection before any modifications
+    // This must be done before initialize() applies CSS changes
+    detectRestrictions()
+
+    // Load initial state from storage
+    const hostname = window.location.hostname
+    chrome.storage.sync.get(['sites'], (result) => {
+      const sites = result.sites || {}
+      const enabled = sites[hostname] === true // Default to false (disabled)
+      initialize(enabled)
+    })
   })
 
   // Listen for messages from popup
@@ -259,6 +379,16 @@
     if (request.action === 'ping') {
       // Respond to ping to indicate content script is injected
       sendResponse({ pong: true })
+      return true
+    }
+
+    if (request.action === 'getDetectionInfo') {
+      // Run detection and send results
+      const results = detectRestrictions()
+      sendResponse({
+        detectionResults: results,
+        isEnabled: isEnabled,
+      })
       return true
     }
 

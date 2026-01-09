@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Page - Restrictions</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    p {
+      margin: 15px 0;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Block context menu
+      document.oncontextmenu = function(e) {
+        e.preventDefault();
+        return false;
+      };
+
+      // Block text selection
+      document.onselectstart = function(e) {
+        e.preventDefault();
+        return false;
+      };
+
+      // Block copy
+      document.oncopy = function(e) {
+        e.preventDefault();
+        return false;
+      };
+    });
+  </script>
+</head>
+<body>
+  <div class="content">
+    <h1>Test Page with Restrictions</h1>
+    <p>
+      This page has multiple restrictions applied:
+    </p>
+    <ul>
+      <li>CSS: user-select: none (prevents text selection)</li>
+      <li>JavaScript: blocks contextmenu event (prevents right-click)</li>
+      <li>JavaScript: blocks selectstart event (prevents selection)</li>
+      <li>JavaScript: blocks copy event (prevents copying)</li>
+    </ul>
+    <p>
+      Try to select this text - you shouldn't be able to without the extension enabled.
+    </p>
+    <p>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+      nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    </p>
+  </div>
+</body>
+</html>
