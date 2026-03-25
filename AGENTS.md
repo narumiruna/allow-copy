@@ -17,9 +17,10 @@ Keep related changes grouped (for example, popup behavior updates should include
 - `popup.js` is the user control surface and should gracefully disable controls on unsupported URLs.
 
 ## Build, Test, and Development Commands
-- `make help`: list available build targets.
-- `make zip`: build `allow-copy-<version>.zip` for Chrome Web Store upload.
-- `make clean`: remove generated zip files.
+- `just help`: list available recipes.
+- `just zip`: build `allow-copy-<version>.zip` for Chrome Web Store upload.
+- `just clean`: remove generated zip files.
+- `just test`: run unit tests if test files are present.
 - `node --check background.js content.js popup.js storage-utils.js`: run quick syntax checks.
 
 Local development flow:
