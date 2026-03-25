@@ -140,9 +140,9 @@ The extension only modifies page behavior in your local browser and never shares
 To create a zip file for Chrome Web Store submission:
 
 ```bash
-make zip      # Creates allow-copy-<version>.zip with all required files
-make clean    # Removes generated zip files
-make help     # Shows available commands
+just zip      # Creates allow-copy-<version>.zip with all required files
+just clean    # Removes generated zip files
+just help     # Shows available commands
 ```
 
 The version number is automatically extracted from `manifest.json`.
@@ -213,9 +213,9 @@ After making changes to the code:
 ├── icon16.png                 # 16x16 toolbar icon
 ├── icon48.png                 # 48x48 extension management icon
 ├── icon128.png                # 128x128 Chrome Web Store icon
-├── Makefile                   # Build automation
+├── justfile                   # Build automation
 ├── README.md                  # This file
-└── CLAUDE.md                  # Detailed technical documentation
+└── AGENTS.md                  # Contributor guide
 ```
 
 ## License
@@ -225,5 +225,3 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Contributing
 
 Issues and pull requests are welcome!
-
-For detailed technical documentation, see [CLAUDE.md](CLAUDE.md).
