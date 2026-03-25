@@ -1,4 +1,4 @@
-.PHONY: zip clean help
+.PHONY: zip clean help test
 
 # Get version from manifest.json
 VERSION := $(shell grep -o '"version": "[^"]*"' manifest.json | cut -d'"' -f4)
@@ -19,6 +19,7 @@ FILES := manifest.json \
 help:
 	@echo "Available targets:"
 	@echo "  make zip    - Create a zip file for Chrome Web Store upload (fails if the zip already exists)"
+	@echo "  make test   - Run unit tests"
 	@echo "  make clean  - Remove generated zip files"
 	@echo "  make help   - Show this help message"
 
@@ -42,3 +43,6 @@ clean:
 	@echo "Cleaning up..."
 	@rm -f allow-copy-*.zip
 	@echo "✓ Cleaned up zip files"
+
+test:
+	@node --test test/*.test.js
