@@ -10,6 +10,12 @@ This repository is a Manifest V3 Chrome extension.
 
 Keep related changes grouped (for example, popup behavior updates should include corresponding UI and docs updates).
 
+## Architecture Notes
+- `background.js` updates badge state and injects scripts on enabled sites after navigation.
+- `content.js` enforces selection/copy/context-menu behavior with capture-phase listeners and style injection.
+- `storage-utils.js` normalizes and migrates per-site config in `chrome.storage.sync`.
+- `popup.js` is the user control surface and should gracefully disable controls on unsupported URLs.
+
 ## Build, Test, and Development Commands
 - `make help`: list available build targets.
 - `make zip`: build `allow-copy-<version>.zip` for Chrome Web Store upload.
@@ -48,24 +54,5 @@ Testing is manual-first (see `docs/TESTING.md`).
 - Keep permission scope minimal (`activeTab`, `storage`, `scripting`, `webNavigation`).
 - Injection logic should only target supported `http/https` pages and fail safely elsewhere.
 
-## Gotcha
-
-- Read `docs/GOTCHA.md` (case-sensitive, in docs/) at session start; it MUST NOT be assumed to be auto-loaded.
-- Apply relevant entries explicitly in root-cause analysis, fix design, and prevention checks.
-- If the agent makes a mistake, add or update an entry in the same session; each entry MUST capture only a **non-obvious, experience-derived pitfall** with symptom, root cause, and prevention rule.
-
-## Taste
-
-- Read `docs/TASTE.md` (case-sensitive, in docs/) at session start; it MUST NOT be assumed to be auto-loaded.
-- Apply relevant entries explicitly in recommendations, implementation choices, and tradeoff decisions.
-- If the user expresses a stable preference, add or update an entry in the same session; each entry MUST capture only a **concrete, reusable preference signal** that should affect future decisions.
-
 ## TDD
-
-- Read `docs/TDD_POLICY.md` at session start; it MUST NOT be assumed to be auto-loaded.
-- Apply rules strictly during implementation and code changes.
-
-## Changelog
-
-- Append ONE line to the end of `docs/CHANGELOG.md`.
-- Format: `YYYY-MM-DD | type(scope): summary (#ref)`.
+- Read and follow `docs/TDD_POLICY.md` for implementation and refactoring work.
