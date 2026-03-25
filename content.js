@@ -48,6 +48,13 @@
   let hasDetectedOnce = false // Track if we've done initial detection
   let lastRightClickAt = 0
   let shouldPreventRightClickNavigation = false
+  const originalDocumentPropertyDescriptors = new Map()
+  let domReadyCleanupRegistered = false
+
+  function onDomReadyCleanup() {
+    domReadyCleanupRegistered = false
+    cleanupDocument()
+  }
 
   function loadRightClickNavigationPreference() {
     try {
@@ -340,13 +347,37 @@
 
       if (shouldOverride) {
         try {
+          if (!originalDocumentPropertyDescriptors.has(prop)) {
+            originalDocumentPropertyDescriptors.set(prop, Object.getOwnPropertyDescriptor(document, prop))
+          }
+
           Object.defineProperty(document, prop, {
             get: () => null,
             set: () => {},
+            configurable: true,
           })
         } catch (_e) {
           // Some properties might not be configurable
         }
+      }
+    })
+  }
+
+  function restoreDocumentProperties() {
+    DOCUMENT_PROPERTIES.forEach((prop) => {
+      if (!originalDocumentPropertyDescriptors.has(prop)) return
+
+      try {
+        const originalDescriptor = originalDocumentPropertyDescriptors.get(prop)
+        if (originalDescriptor) {
+          Object.defineProperty(document, prop, originalDescriptor)
+        } else {
+          delete document[prop]
+        }
+      } catch (_e) {
+        // Some properties might not be configurable
+      } finally {
+        originalDocumentPropertyDescriptors.delete(prop)
       }
     })
   }
@@ -378,6 +409,8 @@
       observer.disconnect()
       observer = null
     }
+
+    restoreDocumentProperties()
   }
 
   // Function to start observer
@@ -454,13 +487,18 @@
       cleanupDocument()
 
       // Re-apply on DOM changes (some sites dynamically add restrictions)
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', cleanupDocument)
+      if (document.readyState === 'loading' && !domReadyCleanupRegistered) {
+        document.addEventListener('DOMContentLoaded', onDomReadyCleanup, { once: true })
+        domReadyCleanupRegistered = true
       }
 
       // Start observing
       startObserving()
     } else {
+      if (domReadyCleanupRegistered) {
+        document.removeEventListener('DOMContentLoaded', onDomReadyCleanup)
+        domReadyCleanupRegistered = false
+      }
       disableInteractions()
       removeCleanup()
     }

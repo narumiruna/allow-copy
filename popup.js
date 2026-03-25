@@ -7,6 +7,21 @@ let lastDetectionResults = null
 // UI state storage key
 const UI_STATE_KEY = 'uiState'
 
+function parseAndValidateUrl(url) {
+  if (!url) return null
+
+  try {
+    const parsedUrl = new URL(url)
+    const isSupportedProtocol = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+    if (!isSupportedProtocol || !parsedUrl.hostname) {
+      return null
+    }
+    return parsedUrl
+  } catch (_e) {
+    return null
+  }
+}
+
 // Update status display
 function updateStatus(enabled) {
   const statusDiv = document.getElementById('status')
@@ -286,7 +301,10 @@ async function injectContentScript(tabId) {
     return { success: true }
   } catch (e) {
     // Expected errors: script already injected, tab doesn't support injection (e.g., chrome:// URLs)
-    if (e.message && !e.message.includes('Cannot access') && !e.message.includes('duplicate')) {
+    if (e.message && e.message.includes('Cannot access')) {
+      return { success: false, error: 'Cannot access this page' }
+    }
+    if (e.message && !e.message.includes('duplicate')) {
       console.log('Content script injection skipped:', e.message)
       return { success: false, error: e.message }
     }
@@ -376,19 +394,19 @@ async function init() {
   }
 
   let hostname
-  try {
-    if (!tab.url) {
-      throw new Error('Missing tab URL')
-    }
-    const url = new URL(tab.url)
-    hostname = url.hostname
-  } catch (e) {
-    console.error('Unable to parse tab URL in popup:', e)
+  const parsedUrl = parseAndValidateUrl(tab.url)
+  if (!parsedUrl) {
     updateStatus(false)
-    siteNameSpan.textContent = 'Unknown site'
+    siteNameSpan.textContent = 'Unsupported page'
+    const statusDiv = document.getElementById('status')
+    if (statusDiv) {
+      statusDiv.className = 'status disabled'
+      statusDiv.textContent = '⚠ Not available on this page'
+    }
     toggle.disabled = true
     return
   }
+  hostname = parsedUrl.hostname
 
   // Display current site
   siteNameSpan.textContent = hostname
