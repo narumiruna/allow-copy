@@ -19,6 +19,7 @@ Keep related changes grouped (for example, popup behavior updates should include
 ## Build, Test, and Development Commands
 - `just help`: list available recipes.
 - `just zip`: build `allow-copy-<version>.zip` for Chrome Web Store upload.
+- `just check`: run JavaScript syntax checks and unit tests.
 - `just clean`: remove generated zip files.
 - `just test`: run unit tests if test files are present.
 - `node --check background.js content.js popup.js storage-utils.js`: run quick syntax checks.

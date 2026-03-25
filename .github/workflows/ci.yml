@@ -25,6 +25,7 @@ jobs:
         run: |
           node --check background.js
           node --check content.js
+          node --check extension-logic.js
           node --check popup.js
           node --check storage-utils.js
 

@@ -6,6 +6,7 @@ default:
 help:
     @echo "Available recipes:"
     @echo "  just zip    - Create a zip file for Chrome Web Store upload (fails if the zip already exists)"
+    @echo "  just check  - Run JavaScript syntax checks and unit tests"
     @echo "  just test   - Run unit tests (if present)"
     @echo "  just clean  - Remove generated zip files"
     @echo "  just help   - Show this help message"
@@ -27,6 +28,7 @@ zip:
       manifest.json \
       background.js \
       content.js \
+      extension-logic.js \
       storage-utils.js \
       popup.html \
       popup.js \
@@ -42,6 +44,14 @@ clean:
     @echo "Cleaning up..."
     @rm -f allow-copy-*.zip
     @echo "✓ Cleaned up zip files"
+
+check:
+    @node --check background.js
+    @node --check content.js
+    @node --check popup.js
+    @node --check storage-utils.js
+    @node --check extension-logic.js
+    @just test
 
 test:
     @if compgen -G "test/*.test.js" >/dev/null; then \
