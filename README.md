@@ -141,6 +141,7 @@ To create a zip file for Chrome Web Store submission:
 
 ```bash
 just zip      # Creates allow-copy-<version>.zip with all required files
+just check    # Runs syntax checks + unit tests
 just clean    # Removes generated zip files
 just help     # Shows available commands
 ```

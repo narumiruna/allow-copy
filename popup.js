@@ -7,21 +7,6 @@ let lastDetectionResults = null
 // UI state storage key
 const UI_STATE_KEY = 'uiState'
 
-function parseAndValidateUrl(url) {
-  if (!url) return null
-
-  try {
-    const parsedUrl = new URL(url)
-    const isSupportedProtocol = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-    if (!isSupportedProtocol || !parsedUrl.hostname) {
-      return null
-    }
-    return parsedUrl
-  } catch (_e) {
-    return null
-  }
-}
-
 // Update status display
 function updateStatus(enabled) {
   const statusDiv = document.getElementById('status')
@@ -300,15 +285,11 @@ async function injectContentScript(tabId) {
     })
     return { success: true }
   } catch (e) {
-    // Expected errors: script already injected, tab doesn't support injection (e.g., chrome:// URLs)
-    if (e.message && e.message.includes('Cannot access')) {
-      return { success: false, error: 'Cannot access this page' }
-    }
-    if (e.message && !e.message.includes('duplicate')) {
+    const classification = ExtensionLogic.classifyPopupInjectionError(e)
+    if (classification.shouldLog) {
       console.log('Content script injection skipped:', e.message)
-      return { success: false, error: e.message }
     }
-    return { success: true } // Expected error, treat as success
+    return { success: classification.success, error: classification.error }
   }
 }
 
@@ -394,7 +375,7 @@ async function init() {
   }
 
   let hostname
-  const parsedUrl = parseAndValidateUrl(tab.url)
+  const parsedUrl = ExtensionLogic.parseSupportedHttpUrl(tab.url)
   if (!parsedUrl) {
     updateStatus(false)
     siteNameSpan.textContent = 'Unsupported page'

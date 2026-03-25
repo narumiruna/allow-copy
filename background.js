@@ -1,6 +1,8 @@
 // Background service worker for Allow Copy extension
 // Handles badge updates and content script injection
 
+// Import shared logic and storage utilities
+importScripts('extension-logic.js')
 // Import storage utilities
 importScripts('storage-utils.js')
 
@@ -13,25 +15,6 @@ const BADGE_CONFIG = {
   DISABLED: {
     text: '',
   },
-}
-
-// Utility: Check if URL is valid for extension and return parsed hostname
-function parseAndValidateUrl(url) {
-  if (!url) return null
-
-  try {
-    const urlObj = new URL(url)
-    const hostname = urlObj.hostname
-
-    // Only allow http and https protocols
-    if (!hostname || (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:')) {
-      return null
-    }
-
-    return hostname
-  } catch (_e) {
-    return null
-  }
 }
 
 // Utility: Get enabled sites from storage
@@ -74,7 +57,7 @@ async function injectContentScript(tabId) {
     return true
   } catch (e) {
     // Log unexpected errors for debugging
-    if (e.message && !e.message.includes('Cannot access') && !e.message.includes('No tab')) {
+    if (ExtensionLogic.shouldLogBackgroundInjectionError(e)) {
       console.error('Unexpected error injecting content script:', e)
     }
     return false
@@ -84,7 +67,7 @@ async function injectContentScript(tabId) {
 // Update badge for a specific tab
 async function updateBadge(tabId, url) {
   try {
-    const hostname = parseAndValidateUrl(url)
+    const hostname = ExtensionLogic.parseSupportedHostname(url)
 
     if (!hostname) {
       await chrome.action.setBadgeText({ text: BADGE_CONFIG.DISABLED.text, tabId })
@@ -169,7 +152,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
     // Only handle main frame navigations
     if (details.frameId !== 0) return
 
-    const hostname = parseAndValidateUrl(details.url)
+    const hostname = ExtensionLogic.parseSupportedHostname(details.url)
     if (!hostname) return
 
     const enabled = await isSiteEnabled(hostname)
@@ -193,7 +176,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     const tabs = await chrome.tabs.query({})
 
     for (const tab of tabs) {
-      const hostname = parseAndValidateUrl(tab.url)
+      const hostname = ExtensionLogic.parseSupportedHostname(tab.url)
       if (!hostname) continue
 
       // Inject if site is enabled (check the enabled property in new format)
