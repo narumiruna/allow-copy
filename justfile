@@ -8,6 +8,7 @@ help:
     @echo "  just zip    - Create a zip file for Chrome Web Store upload (fails if the zip already exists)"
     @echo "  just check  - Run JavaScript syntax checks and unit tests"
     @echo "  just test   - Run unit tests (if present)"
+    @echo "  just e2e    - Run Playwright end-to-end tests"
     @echo "  just clean  - Remove generated zip files"
     @echo "  just help   - Show this help message"
 
@@ -59,3 +60,6 @@ test:
     else \
         echo "No unit tests found (skipping)."; \
     fi
+
+e2e:
+    @npx playwright test

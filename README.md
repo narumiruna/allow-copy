@@ -150,6 +150,25 @@ The version number is automatically extracted from `manifest.json`.
 
 ### Testing Changes
 
+#### Automated E2E Tests
+
+Playwright covers the core extension flow against `test-restriction.html` served over `http://127.0.0.1`, which matches the extension's supported URL model.
+
+```bash
+npm install
+npx playwright install chromium
+just e2e
+```
+
+Current coverage verifies:
+
+- popup can target the active test page,
+- enabling the site restores text selection,
+- the enabled state persists after reload.
+- `https://www.izaax.net/blog/` is covered as a real-world regression where the page blocks selection and context menu until the extension is enabled.
+
+The Playwright fixture loads a temporary test-only copy of the extension with host permissions for `http://127.0.0.1/*` and `https://www.izaax.net/*` so the popup flow is automatable in headless Chromium without changing the shipping manifest.
+
 After making changes to the code:
 
 1. Go to `chrome://extensions/`

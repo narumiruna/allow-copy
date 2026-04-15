@@ -1,5 +1,25 @@
 # Testing Checklist for Allow Copy Extension
 
+## Automated Playwright E2E
+
+Run the automated browser test suite with:
+
+```bash
+npm install
+npx playwright install chromium
+just e2e
+```
+
+Current automated coverage focuses on the core regression path:
+
+- open the popup against `http://127.0.0.1:4173/test-restriction.html`,
+- enable the extension for the site,
+- verify text selection becomes available,
+- verify the enabled state still works after reload,
+- verify `https://www.izaax.net/blog/` regains text selection and context menu behavior after enabling.
+
+The fixture uses a temporary test-only extension copy that adds host permissions for `http://127.0.0.1/*` and `https://www.izaax.net/*`, so Playwright can drive the popup flow in headless Chromium without changing `manifest.json` in the repository.
+
 ## Phase 1: Restriction Detection Tests
 
 ### Using the Test Page

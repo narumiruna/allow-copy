@@ -264,7 +264,32 @@ async function updateFeatures(tab, hostname, features, isEnabledForSite) {
 }
 
 // Get current tab
+function getRequestedTab() {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const rawTabId = params.get('tabId')
+    const rawUrl = params.get('url')
+    const tabId = Number(rawTabId)
+
+    if (!Number.isInteger(tabId) || tabId <= 0 || !rawUrl) {
+      return null
+    }
+
+    return {
+      id: tabId,
+      url: rawUrl,
+    }
+  } catch (_e) {
+    return null
+  }
+}
+
 async function getCurrentTab() {
+  const requestedTab = getRequestedTab()
+  if (requestedTab) {
+    return requestedTab
+  }
+
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
   return tabs?.[0]
 }
