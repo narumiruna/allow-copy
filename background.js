@@ -5,6 +5,10 @@
 importScripts("extension-logic.js");
 // Import storage utilities
 importScripts("storage-utils.js");
+// Import site enablement coordination utilities
+importScripts("site-enablement.js");
+// Import site permission helpers
+importScripts("site-permissions.js");
 
 // Constants
 const BADGE_CONFIG = {
@@ -26,6 +30,20 @@ async function getEnabledSites() {
 async function isSiteEnabled(hostname) {
 	if (!hostname) return false;
 	return await StorageUtils.isSiteEnabled(hostname);
+}
+
+async function isSiteEnabledForUrl(url) {
+	const hostname = ExtensionLogic.parseSupportedHostname(url);
+	if (!hostname) {
+		return false;
+	}
+
+	const storedEnabled = await isSiteEnabled(hostname);
+	if (!storedEnabled) {
+		return false;
+	}
+
+	return await SitePermissions.hasPersistentSiteAccessForUrl(url);
 }
 
 // Inject content script into a tab
@@ -67,9 +85,7 @@ async function injectContentScript(tabId) {
 // Update badge for a specific tab
 async function updateBadge(tabId, url) {
 	try {
-		const hostname = ExtensionLogic.parseSupportedHostname(url);
-
-		if (!hostname) {
+		if (!ExtensionLogic.parseSupportedHostname(url)) {
 			await chrome.action.setBadgeText({
 				text: BADGE_CONFIG.DISABLED.text,
 				tabId,
@@ -77,7 +93,7 @@ async function updateBadge(tabId, url) {
 			return;
 		}
 
-		const enabled = await isSiteEnabled(hostname);
+		const enabled = await isSiteEnabledForUrl(url);
 
 		if (enabled) {
 			// Show green badge with checkmark
@@ -153,6 +169,36 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
 	}
 });
 
+chrome.permissions.onAdded.addListener(async (permissions) => {
+	try {
+		const finalizedHostnames = await SiteEnablement.finalizePendingSiteEnables(
+			permissions?.origins || [],
+			{
+				getPending: (hostname) => SiteEnablement.getPendingSiteEnable(hostname),
+				clearPending: (hostname) => SiteEnablement.clearPendingSiteEnable(hostname),
+				setSiteConfig: (hostname, enabled, features) =>
+					StorageUtils.setSiteConfig(hostname, enabled, features),
+			},
+		);
+
+		if (finalizedHostnames.length === 0) {
+			return;
+		}
+
+		const tabs = await chrome.tabs.query({});
+		for (const tab of tabs) {
+			const hostname = ExtensionLogic.parseSupportedHostname(tab.url);
+			if (!hostname || !finalizedHostnames.includes(hostname)) {
+				continue;
+			}
+
+			await updateBadge(tab.id, tab.url);
+		}
+	} catch (e) {
+		console.error("Error in permissions.onAdded:", e);
+	}
+});
+
 // Note: chrome.action.onClicked does not fire when a popup is defined in the manifest.
 // If you want to use this listener, you must remove the default_popup from manifest.json
 // and handle the extension icon click manually. Keeping this commented out for reference:
@@ -167,10 +213,9 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 		// Only handle main frame navigations
 		if (details.frameId !== 0) return;
 
-		const hostname = ExtensionLogic.parseSupportedHostname(details.url);
-		if (!hostname) return;
+		if (!ExtensionLogic.parseSupportedHostname(details.url)) return;
 
-		const enabled = await isSiteEnabled(hostname);
+		const enabled = await isSiteEnabledForUrl(details.url);
 
 		if (enabled) {
 			await injectContentScript(details.tabId);
@@ -194,8 +239,10 @@ chrome.runtime.onInstalled.addListener(async () => {
 			const hostname = ExtensionLogic.parseSupportedHostname(tab.url);
 			if (!hostname) continue;
 
-			// Inject if site is enabled (check the enabled property in new format)
-			if (sites[hostname]?.enabled) {
+			if (
+				sites[hostname]?.enabled &&
+				(await SitePermissions.hasPersistentSiteAccessForUrl(tab.url))
+			) {
 				await injectContentScript(tab.id);
 			}
 

@@ -408,6 +408,36 @@ async function ensureSitePermissionBeforeEnable(hostname) {
 	}
 }
 
+async function recordPendingEnable(hostname, features) {
+	if (!hostname || typeof SiteEnablement === "undefined") {
+		return;
+	}
+
+	await SiteEnablement.setPendingSiteEnable(hostname, features);
+}
+
+async function clearPendingEnable(hostname) {
+	if (!hostname || typeof SiteEnablement === "undefined") {
+		return;
+	}
+
+	await SiteEnablement.clearPendingSiteEnable(hostname);
+}
+
+async function reconcileEnabledStateWithPermission(tabUrl, hostname, config) {
+	if (!config.enabled || typeof SitePermissions === "undefined") {
+		return config.enabled;
+	}
+
+	const hasAccess = await SitePermissions.hasPersistentSiteAccessForUrl(tabUrl);
+	if (hasAccess) {
+		return true;
+	}
+
+	await setSiteConfig(hostname, false, config.features);
+	return false;
+}
+
 // Initialize popup
 async function init() {
 	const toggle = document.getElementById("toggleExtension");
@@ -459,7 +489,11 @@ async function init() {
 
 	// Load saved configuration for this site
 	const config = await getSiteConfig(hostname);
-	const enabled = config.enabled;
+	const enabled = await reconcileEnabledStateWithPermission(
+		tab.url,
+		hostname,
+		config,
+	);
 	const features = config.features;
 	currentFeatures = { ...features };
 	toggle.checked = enabled;
@@ -481,8 +515,10 @@ async function init() {
 		const newState = toggle.checked;
 		try {
 			if (newState) {
+				await recordPendingEnable(hostname, currentFeatures || features);
 				const granted = await ensureSitePermissionBeforeEnable(hostname);
 				if (!granted) {
+					await clearPendingEnable(hostname);
 					toggle.checked = false;
 					showPermissionRequiredStatus();
 					if (lastDetectionResults) {
@@ -494,6 +530,8 @@ async function init() {
 					}
 					return;
 				}
+			} else {
+				await clearPendingEnable(hostname);
 			}
 
 			// Update UI immediately during the toggle transition
