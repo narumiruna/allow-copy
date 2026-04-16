@@ -21,6 +21,14 @@ function updateStatus(enabled) {
   }
 }
 
+function showPermissionRequiredStatus() {
+  const statusDiv = document.getElementById('status')
+  if (!statusDiv) return
+
+  statusDiv.className = 'status disabled'
+  statusDiv.textContent = '⚠ Allow this site in the browser prompt to keep it enabled'
+}
+
 // Update detection info display
 function updateDetectionInfo(detectionResults, isEnabled, features) {
   const detectedSection = document.getElementById('detectedRestrictions')
@@ -382,6 +390,19 @@ async function toggleSite(tab, hostname, enabled, features = null) {
   })
 }
 
+async function ensureSitePermissionBeforeEnable(hostname) {
+  if (!hostname || typeof SitePermissions === 'undefined') {
+    return false
+  }
+
+  try {
+    return await SitePermissions.ensurePersistentSiteAccess(hostname)
+  } catch (e) {
+    console.error('Failed to request site permission:', e)
+    return false
+  }
+}
+
 // Initialize popup
 async function init() {
   const toggle = document.getElementById('toggleExtension')
@@ -454,6 +475,18 @@ async function init() {
   toggle.addEventListener('change', async () => {
     const newState = toggle.checked
     try {
+      if (newState) {
+        const granted = await ensureSitePermissionBeforeEnable(hostname)
+        if (!granted) {
+          toggle.checked = false
+          showPermissionRequiredStatus()
+          if (lastDetectionResults) {
+            updateDetectionInfo(lastDetectionResults, false, currentFeatures || features)
+          }
+          return
+        }
+      }
+
       // Update UI immediately during the toggle transition
       if (lastDetectionResults) {
         updateDetectionInfo(lastDetectionResults, newState, currentFeatures || features)

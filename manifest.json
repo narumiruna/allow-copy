@@ -4,6 +4,7 @@
   "version": "1.4.1",
   "description": "Enable copying and text selection on websites that disable these features",
   "permissions": ["storage", "activeTab", "scripting", "webNavigation"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js"
   },

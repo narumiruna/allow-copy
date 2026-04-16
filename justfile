@@ -30,6 +30,7 @@ zip:
       background.js \
       content.js \
       extension-logic.js \
+      site-permissions.js \
       storage-utils.js \
       popup.html \
       popup.js \
@@ -52,6 +53,7 @@ check:
     @node --check popup.js
     @node --check storage-utils.js
     @node --check extension-logic.js
+    @node --check site-permissions.js
     @just test
 
 test:

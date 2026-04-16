@@ -15,7 +15,7 @@ A Chrome extension that enables copying and text selection on websites that disa
   - JS: document-level handlers like `oncontextmenu`, `onselectstart`, `oncopy`
 - Advanced Options update immediately (when enabled) and are saved per site via `chrome.storage.sync`
 - ✓ badge indicator when enabled for the current site
-- Privacy-first permission model: `activeTab` (no `<all_urls>` host permissions)
+- Privacy-first permission model: `activeTab` plus per-site optional host permissions granted only when you enable a site
 
 ## Installation
 
@@ -39,14 +39,13 @@ A Chrome extension that enables copying and text selection on websites that disa
 
 ## How It Works
 
-The extension uses the `activeTab` permission model for enhanced privacy and security:
+The extension uses `activeTab` plus per-site optional host permissions for privacy and persistence:
 
 - When you click the extension icon, it gains temporary access to the current tab
+- When you enable a site, Chrome asks for permission for that hostname only, so the extension can keep working on future visits
 - The popup injects the content script into the current page to detect restrictions and (optionally) apply fixes
 - For sites you've enabled, the background script attempts to re-inject on navigation to maintain functionality
-- No broad permissions are requested - the extension only works where you want it
-
-If the extension doesn’t apply automatically after navigation, open the popup once on that page to grant access and re-inject.
+- No broad permissions are requested - access is granted only for the specific sites you enable
 
 The content script:
 
@@ -65,7 +64,8 @@ The content script:
 1. Visit a website where you want to enable copying and text selection
 2. Click the extension icon in your browser toolbar to open the popup
 3. Toggle the switch to **ON** to enable the extension for that site
-4. The extension will show a green checkmark (✓) badge when enabled
+4. Approve Chrome's site access prompt for that hostname
+5. The extension will show a green checkmark (✓) badge when enabled
 
 ### Viewing Detected Restrictions
 

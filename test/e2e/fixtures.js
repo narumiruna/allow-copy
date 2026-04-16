@@ -4,7 +4,12 @@ const path = require('node:path')
 const { test: base, expect, chromium } = require('@playwright/test')
 
 const projectRoot = path.resolve(__dirname, '../..')
-const TEST_HOST_PERMISSIONS = ['http://127.0.0.1/*', 'https://www.izaax.net/*']
+const TEST_HOST_PERMISSIONS = [
+  'http://127.0.0.1/*',
+  'https://127.0.0.1/*',
+  'http://www.izaax.net/*',
+  'https://www.izaax.net/*',
+]
 
 async function createTestExtension() {
   const extensionRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'allow-copy-extension-'))
