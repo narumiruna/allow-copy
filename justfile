@@ -5,6 +5,7 @@ default:
 
 help:
     @echo "Available recipes:"
+    @echo "  just biome  - Run Biome lint and format with writes enabled"
     @echo "  just zip    - Create a zip file for Chrome Web Store upload (fails if the zip already exists)"
     @echo "  just check  - Run JavaScript syntax checks and unit tests"
     @echo "  just test   - Run unit tests (if present)"
@@ -48,7 +49,12 @@ clean:
     @rm -f allow-copy-*.zip
     @echo "✓ Cleaned up zip files"
 
+biome:
+    @npx biome lint --write .
+    @npx biome format --write .
+
 check:
+    @just biome
     @node --check background.js
     @node --check content.js
     @node --check popup.js
