@@ -29,21 +29,21 @@
     }
   </style>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
       // Block context menu
-      document.oncontextmenu = function(e) {
+      document.oncontextmenu = (e) => {
         e.preventDefault();
         return false;
       };
 
       // Block text selection
-      document.onselectstart = function(e) {
+      document.onselectstart = (e) => {
         e.preventDefault();
         return false;
       };
 
       // Block copy
-      document.oncopy = function(e) {
+      document.oncopy = (e) => {
         e.preventDefault();
         return false;
       };

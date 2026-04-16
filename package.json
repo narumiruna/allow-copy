@@ -1,11 +1,11 @@
 {
-  "name": "allow-copy",
-  "private": true,
-  "scripts": {
-    "test": "node --test test/*.test.js",
-    "test:e2e": "playwright test"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.57.0"
-  }
+	"name": "allow-copy",
+	"private": true,
+	"scripts": {
+		"test": "node --test test/*.test.js",
+		"test:e2e": "playwright test"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.57.0"
+	}
 }
