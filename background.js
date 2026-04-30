@@ -175,7 +175,8 @@ chrome.permissions.onAdded.addListener(async (permissions) => {
 			permissions?.origins || [],
 			{
 				getPending: (hostname) => SiteEnablement.getPendingSiteEnable(hostname),
-				clearPending: (hostname) => SiteEnablement.clearPendingSiteEnable(hostname),
+				clearPending: (hostname) =>
+					SiteEnablement.clearPendingSiteEnable(hostname),
 				setSiteConfig: (hostname, enabled, features) =>
 					StorageUtils.setSiteConfig(hostname, enabled, features),
 			},
