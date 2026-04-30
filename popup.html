@@ -8,15 +8,16 @@
 </head>
 <body>
   <div class="header">
-    <h1>Allow Copy</h1>
-    <div class="description">
-      Enable copying and text selection on websites
+    <div class="header-brand">
+      <img src="icon48.png" class="header-icon" alt="Allow Copy">
+      <h1>Allow Copy</h1>
     </div>
+    <div class="description">Enable copying and text selection on websites</div>
   </div>
 
   <div class="site-info">
-    <span class="site-label">Current site:</span>
-    <span id="siteName" class="site-name">Loading...</span>
+    <span class="site-globe" aria-hidden="true">🌐</span>
+    <span id="siteName" class="site-name">Loading…</span>
   </div>
 
   <div class="toggle-container">
@@ -49,42 +50,40 @@
 
   <div id="advancedOptions" class="advanced-section" style="display: none;">
     <div class="advanced-toggle" id="advancedToggle">
-      <span class="advanced-arrow">▶</span>
+      <span class="advanced-arrow"></span>
       <span class="advanced-title">Advanced Options</span>
     </div>
-    <div id="advancedContent" class="advanced-content" style="display: none;">
-      <div id="advancedNote" class="advanced-note" style="display: none;">
-        Will apply when enabled for this site
-      </div>
-      <div class="feature-toggle-item">
-        <label>
-          <input type="checkbox" id="featureTextSelection" class="feature-checkbox" />
-          <span class="feature-label">Enable text selection</span>
-        </label>
-      </div>
-      <div class="feature-toggle-item">
-        <label>
-          <input type="checkbox" id="featureContextMenu" class="feature-checkbox" />
-          <span class="feature-label">Enable right-click menu</span>
-        </label>
-      </div>
-      <div class="feature-toggle-item">
-        <label>
-          <input type="checkbox" id="featureCopyPaste" class="feature-checkbox" />
-          <span class="feature-label">Enable copy/cut operations</span>
-        </label>
-      </div>
-      <div class="feature-toggle-item">
-        <label>
-          <input type="checkbox" id="featureCursor" class="feature-checkbox" />
-          <span class="feature-label">Restore cursor styles</span>
-        </label>
+    <div id="advancedContent" class="advanced-content">
+      <div class="advanced-content-inner">
+        <div id="advancedNote" class="advanced-note" style="display: none;">
+          Will apply when enabled for this site
+        </div>
+        <div class="feature-toggle-item">
+          <label>
+            <input type="checkbox" id="featureTextSelection" class="feature-checkbox" />
+            <span class="feature-label">Enable text selection</span>
+          </label>
+        </div>
+        <div class="feature-toggle-item">
+          <label>
+            <input type="checkbox" id="featureContextMenu" class="feature-checkbox" />
+            <span class="feature-label">Enable right-click menu</span>
+          </label>
+        </div>
+        <div class="feature-toggle-item">
+          <label>
+            <input type="checkbox" id="featureCopyPaste" class="feature-checkbox" />
+            <span class="feature-label">Enable copy/cut operations</span>
+          </label>
+        </div>
+        <div class="feature-toggle-item">
+          <label>
+            <input type="checkbox" id="featureCursor" class="feature-checkbox" />
+            <span class="feature-label">Restore cursor styles</span>
+          </label>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="info">
-    Toggle to enable or disable for the current site
   </div>
 
   <script src="storage-utils.js"></script>

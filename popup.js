@@ -206,7 +206,7 @@ async function setupAdvancedOptionsToggle() {
 	try {
 		const result = await chrome.storage.sync.get([UI_STATE_KEY]);
 		const expanded = result?.[UI_STATE_KEY]?.advancedExpanded === true;
-		advancedContent.style.display = expanded ? "block" : "none";
+		advancedContent.classList.toggle("open", expanded);
 		if (expanded) {
 			advancedArrow?.classList.add("expanded");
 		} else {
@@ -214,18 +214,18 @@ async function setupAdvancedOptionsToggle() {
 		}
 	} catch (_e) {
 		// If storage fails, default to collapsed
-		advancedContent.style.display = "none";
+		advancedContent.classList.remove("open");
 		advancedArrow?.classList.remove("expanded");
 	}
 
 	advancedToggle.addEventListener("click", () => {
-		const isExpanded = advancedContent.style.display === "block";
+		const isExpanded = advancedContent.classList.contains("open");
 
 		if (isExpanded) {
-			advancedContent.style.display = "none";
+			advancedContent.classList.remove("open");
 			advancedArrow?.classList.remove("expanded");
 		} else {
-			advancedContent.style.display = "block";
+			advancedContent.classList.add("open");
 			advancedArrow?.classList.add("expanded");
 		}
 
