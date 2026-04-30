@@ -288,6 +288,7 @@ input:focus-visible + .slider {
 .advanced-toggle {
 	display: flex;
 	align-items: center;
+	width: 100%;
 	padding: 8px 12px;
 	background: var(--color-bg-lighter);
 	border-radius: var(--radius-sm);
@@ -297,6 +298,12 @@ input:focus-visible + .slider {
 		background-color 0.2s,
 		border-color 0.2s;
 	border: 1px solid var(--color-border-light);
+	/* reset <button> defaults */
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	-webkit-appearance: none;
+	appearance: none;
 }
 
 .advanced-toggle:hover {

@@ -207,6 +207,7 @@ async function setupAdvancedOptionsToggle() {
 		const result = await chrome.storage.sync.get([UI_STATE_KEY]);
 		const expanded = result?.[UI_STATE_KEY]?.advancedExpanded === true;
 		advancedContent.classList.toggle("open", expanded);
+		advancedToggle.setAttribute("aria-expanded", String(expanded));
 		if (expanded) {
 			advancedArrow?.classList.add("expanded");
 		} else {
@@ -215,6 +216,7 @@ async function setupAdvancedOptionsToggle() {
 	} catch (_e) {
 		// If storage fails, default to collapsed
 		advancedContent.classList.remove("open");
+		advancedToggle.setAttribute("aria-expanded", "false");
 		advancedArrow?.classList.remove("expanded");
 	}
 
@@ -224,9 +226,11 @@ async function setupAdvancedOptionsToggle() {
 		if (isExpanded) {
 			advancedContent.classList.remove("open");
 			advancedArrow?.classList.remove("expanded");
+			advancedToggle.setAttribute("aria-expanded", "false");
 		} else {
 			advancedContent.classList.add("open");
 			advancedArrow?.classList.add("expanded");
+			advancedToggle.setAttribute("aria-expanded", "true");
 		}
 
 		// Persist UI state (best-effort)
