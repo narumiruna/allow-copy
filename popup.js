@@ -334,16 +334,6 @@ async function injectContentScript(tabId) {
 	}
 }
 
-// Get site configuration from storage
-async function getSiteConfig(hostname) {
-	return await StorageUtils.getSiteConfig(hostname);
-}
-
-// Update site configuration in storage
-async function setSiteConfig(hostname, enabled, features = null) {
-	await StorageUtils.setSiteConfig(hostname, enabled, features);
-}
-
 // Queue-based toggle to prevent race conditions without busy-waiting
 const toggleQueue = [];
 let processingQueue = false;
@@ -362,7 +352,7 @@ async function processToggleQueue() {
 
 			try {
 				// Save site configuration with features
-				await setSiteConfig(hostname, enabled, features);
+				await StorageUtils.setSiteConfig(hostname, enabled, features);
 				updateStatus(enabled);
 
 				// Notify the current tab to update
@@ -438,7 +428,7 @@ async function reconcileEnabledStateWithPermission(tabUrl, hostname, config) {
 		return true;
 	}
 
-	await setSiteConfig(hostname, false, config.features);
+	await StorageUtils.setSiteConfig(hostname, false, config.features);
 	return false;
 }
 
@@ -492,7 +482,7 @@ async function init() {
 	}
 
 	// Load saved configuration for this site
-	const config = await getSiteConfig(hostname);
+	const config = await StorageUtils.getSiteConfig(hostname);
 	const enabled = await reconcileEnabledStateWithPermission(
 		tab.url,
 		hostname,

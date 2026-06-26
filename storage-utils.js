@@ -82,16 +82,6 @@
 	}
 
 	/**
-	 * Get features for a specific site
-	 * @param {string} hostname - Site hostname
-	 * @returns {Promise<object>} Features configuration
-	 */
-	async function getSiteFeatures(hostname) {
-		const config = await getSiteConfig(hostname);
-		return config.features;
-	}
-
-	/**
 	 * Set configuration for a specific site
 	 * @param {string} hostname - Site hostname
 	 * @param {boolean} enabled - Whether the site is enabled
@@ -169,7 +159,6 @@
 			getAllSites,
 			getSiteConfig,
 			isSiteEnabled,
-			getSiteFeatures,
 			setSiteConfig,
 			updateSiteFeatures,
 			migrateStorage,
@@ -182,7 +171,6 @@
 			getAllSites,
 			getSiteConfig,
 			isSiteEnabled,
-			getSiteFeatures,
 			setSiteConfig,
 			updateSiteFeatures,
 			migrateStorage,

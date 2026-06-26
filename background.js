@@ -21,24 +21,13 @@ const BADGE_CONFIG = {
 	},
 };
 
-// Utility: Get enabled sites from storage
-async function getEnabledSites() {
-	return await StorageUtils.getAllSites();
-}
-
-// Utility: Check if site is enabled
-async function isSiteEnabled(hostname) {
-	if (!hostname) return false;
-	return await StorageUtils.isSiteEnabled(hostname);
-}
-
 async function isSiteEnabledForUrl(url) {
 	const hostname = ExtensionLogic.parseSupportedHostname(url);
 	if (!hostname) {
 		return false;
 	}
 
-	const storedEnabled = await isSiteEnabled(hostname);
+	const storedEnabled = await StorageUtils.isSiteEnabled(hostname);
 	if (!storedEnabled) {
 		return false;
 	}
@@ -233,7 +222,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 		// Migrate storage from old format to new format if needed
 		await StorageUtils.migrateStorage();
 
-		const sites = await getEnabledSites();
+		const sites = await StorageUtils.getAllSites();
 		const tabs = await chrome.tabs.query({});
 
 		for (const tab of tabs) {
