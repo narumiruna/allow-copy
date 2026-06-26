@@ -57,6 +57,7 @@ function assertBumpFails(dir, stderrPattern, args = []) {
 	assert.throws(
 		() => runBumpInDir(dir, args),
 		(error) => {
+			assert.equal(error.status, 1);
 			const stderr = error.stderr.toString();
 			assert.match(stderr, stderrPattern);
 			assert.doesNotMatch(stderr, /\n\s+at /);
