@@ -9,8 +9,14 @@ if (!bumps.has(bump)) {
 }
 
 const path = "manifest.json";
-const text = readFileSync(path, "utf8");
+let text;
 let manifest;
+
+try {
+	text = readFileSync(path, "utf8");
+} catch (error) {
+	die(`Could not read ${path}: ${error.message}`);
+}
 
 try {
 	manifest = JSON.parse(text);
@@ -44,7 +50,12 @@ if (nextText === text) {
 	die("Could not replace manifest version.");
 }
 
-writeFileSync(path, nextText);
+try {
+	writeFileSync(path, nextText);
+} catch (error) {
+	die(`Could not write ${path}: ${error.message}`);
+}
+
 console.log(version);
 
 function die(message) {
