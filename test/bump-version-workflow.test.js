@@ -54,6 +54,10 @@ test("release workflow exposes bump choices, tags, and creates a release", () =>
 	assert.match(workflow, /-\s*major/);
 	assert.match(workflow, /-\s*minor/);
 	assert.match(workflow, /-\s*patch/);
+	assert.match(workflow, /contents:\s*read/);
+	assert.match(workflow, /PAT_TOKEN: \$\{\{ secrets\.PAT_TOKEN \}\}/);
+	assert.match(workflow, /token: \$\{\{ secrets\.PAT_TOKEN \}\}/);
+	assert.doesNotMatch(workflow, /github\.token/);
 	assert.match(workflow, /git tag "\$TAG"/);
 	assert.match(workflow, /gh release create "\$TAG"/);
 });
