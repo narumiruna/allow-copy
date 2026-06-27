@@ -1,0 +1,119 @@
+name: Bump Version and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bump-version-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require PAT_TOKEN
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          if [[ -z "$PAT_TOKEN" ]]; then
+            echo "Configure a fine-grained PAT_TOKEN repository secret with Contents: Read and write access." >&2
+            exit 1
+          fi
+
+      - name: Require main branch
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Run this workflow from main." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Bump manifest version
+        env:
+          BUMP_TYPE: ${{ inputs.bump }}
+        run: |
+          git fetch --tags --force
+          version="$(node .github/scripts/bump-manifest-version.mjs "$BUMP_TYPE")"
+          tag="v$version"
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists." >&2
+            exit 1
+          fi
+
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=allow-copy-$version.zip" >> "$GITHUB_ENV"
+
+      - name: Run checks
+        run: |
+          node --check background.js
+          node --check content.js
+          node --check extension-logic.js
+          node --check popup.js
+          node --check site-enablement.js
+          node --check site-permissions.js
+          node --check storage-utils.js
+          node --check .github/scripts/bump-manifest-version.mjs
+          node --test test/*.test.js
+
+      - name: Build extension zip
+        run: |
+          if ! command -v zip >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y zip
+          fi
+
+          zip "$ZIP_NAME" \
+            manifest.json \
+            background.js \
+            content.js \
+            extension-logic.js \
+            site-enablement.js \
+            site-permissions.js \
+            storage-utils.js \
+            popup.html \
+            popup.js \
+            popup.css \
+            icon16.png \
+            icon48.png \
+            icon128.png
+
+      - name: Commit and tag version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "bump version to $VERSION"
+          git tag "$TAG"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          git push origin "$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh release create "$TAG" "$ZIP_NAME" --title "$TAG" --generate-notes
