@@ -1,247 +1,116 @@
 # Allow Copy
 
-A Chrome extension that enables copying and text selection on websites that disable these features.
+Allow Copy is a privacy-first Chrome extension that restores copying, text selection, right-click menus, and normal cursor behavior on sites that disable them.
 
 ## Features
 
-- Per-site opt-in toggle (disabled by default)
-- Restore interactions (configurable per site):
-  - Text selection
-  - Right-click context menu
-  - Copy/cut operations
-  - Cursor normalization
-- Detect restrictions and show them in the popup:
-  - CSS: `user-select`, `pointer-events`, cursor styles
-  - JS: document-level handlers like `oncontextmenu`, `onselectstart`, `oncopy`
-- Advanced Options update immediately (when enabled) and are saved per site via `chrome.storage.sync`
-- ✓ badge indicator when enabled for the current site
-- Privacy-first permission model: `activeTab` plus per-site optional host permissions granted only when you enable a site
+- Opt in per hostname with no broad install-time host access.
+- Restore text selection, context menus, copy and cut operations, and cursor styles independently.
+- Detect common CSS and JavaScript restrictions.
+- Apply Advanced Options immediately and save them per site in `chrome.storage.sync`.
+- Show a badge when the current site is enabled.
+- Preserve legacy boolean site settings through automatic normalization and migration.
 
-## Installation
+## Install From Source
 
-### From Source (Developer Mode)
+Requirements:
 
-1. Clone this repository or download the source code:
-
-   ```bash
-   git clone https://github.com/narumiruna/allow-copy.git
-   ```
-
-2. Open Chrome and navigate to `chrome://extensions/`
-
-3. Enable "Developer mode" using the toggle in the top-right corner
-
-4. Click "Load unpacked" button
-
-5. Select the `allow-copy` folder
-
-6. The extension is now installed and active!
-
-## How It Works
-
-The extension uses `activeTab` plus per-site optional host permissions for privacy and persistence:
-
-- When you click the extension icon, it gains temporary access to the current tab
-- When you enable a site, Chrome asks for permission for that hostname only, so the extension can keep working on future visits
-- The popup injects the content script into the current page to detect restrictions and (optionally) apply fixes
-- For sites you've enabled, the background script attempts to re-inject on navigation to maintain functionality
-- No broad permissions are requested - access is granted only for the specific sites you enable
-
-The content script:
-
-- Intercepts and stops propagation of events that websites use to disable right-clicking
-- **Avoids right-click navigation** on sites that hijack right-click (automatically learns this per tab session and then prevents default on right-button `mousedown`/`mouseup`)
-- **Allows browser context menu** by not preventing default on `contextmenu` event
-- Overrides CSS properties that prevent text selection (and can normalize cursor styles)
-- Prevents websites from overriding browser default behaviors
-- Re-injects its override style if the page removes it
-- Can be toggled on/off per-site via the extension popup
-
-## Usage
-
-### First Time Setup
-
-1. Visit a website where you want to enable copying and text selection
-2. Click the extension icon in your browser toolbar to open the popup
-3. Toggle the switch to **ON** to enable the extension for that site
-4. Approve Chrome's site access prompt for that hostname
-5. The extension will show a green checkmark (✓) badge when enabled
-
-### Viewing Detected Restrictions
-
-When you open the popup, you'll see:
-
-- **🔍 Detected Restrictions**: Lists what restrictions the website has applied (or "No restrictions detected")
-
-  - Text selection disabled (CSS)
-  - Right-click menu blocked (JavaScript)
-  - Copy/cut operations blocked
-  - Mouse cursor restrictions
-  - Mouse interaction disabled (CSS)
-
-- **⚡ Enabled Features**: Shows which features are configured for this site
-  - Text selection restored
-  - Right-click menu restored
-  - Copy/cut operations enabled
-  - Cursor behavior normalized
-
-### Using Advanced Options
-
-The **Advanced Options** section lets you control individual features for the current site (you can configure it even while the site is disabled):
-
-1. **Enable text selection**: Toggle CSS and event-based text selection blocking
-2. **Enable right-click menu**: Toggle context menu blocking
-3. **Enable copy/cut operations**: Toggle clipboard operation blocking
-4. **Restore cursor styles**: Toggle cursor style restoration (disable if you want to keep site's custom cursor)
-
-**Features:**
-
-- Changes take effect **immediately** without page reload
-- Settings are saved **per-site** and synced across devices
-- All features enabled by default when you turn on the extension
-- Advanced Options expand/collapse state is **remembered**
-
-### Using the Extension
-
-Once enabled for a site, the extension works automatically:
-
-1. Visit any website where you've enabled the extension
-2. Right-click anywhere on the page - the browser's context menu will appear!
-3. Select and copy text - it will work!
-4. Use Advanced Options to fine-tune which features you want enabled
-
-**Note:**
-
-- The extension is disabled by default for all sites (opt-in model for your privacy)
-- Each website has its own enable/disable setting
-- Feature preferences are saved per-site
-- Settings are saved and synced across your devices
-- Some sites use CSS like `pointer-events: none`; the extension detects this but does not currently override it
-- The extension can block website navigation triggered by right-click while still allowing the browser's context menu
-
-## Privacy & Security
-
-This extension follows privacy-first principles:
-
-- **Uses activeTab permission**: Only accesses tabs you explicitly interact with
-- **Per-site opt-in**: You control exactly which sites the extension works on
-- **No broad permissions**: Does not request access to all websites by default
-- **No data collection**: Does not collect, store, or transmit any user data
-- **No external servers**: All functionality is local to your browser
-- **No tracking or analytics**: Your browsing activity is completely private
-- **Open source**: All code is publicly available for review
-
-The extension only modifies page behavior in your local browser and never shares information externally.
-
-## Development
-
-### Building for Chrome Web Store
-
-To create a zip file for Chrome Web Store submission:
-
-```bash
-just zip      # Creates allow-copy-<version>.zip with all required files
-just check    # Runs syntax checks + unit tests
-just clean    # Removes generated zip files
-just help     # Shows available commands
-```
-
-The version number is automatically extracted from `manifest.json`.
-
-### Testing Changes
-
-#### Automated E2E Tests
-
-Playwright covers the core extension flow against `test-restriction.html` served over `http://127.0.0.1`, which matches the extension's supported URL model.
+- Node.js 22.12 or newer.
+- npm.
 
 ```bash
 npm install
-npx playwright install chromium
+npm run build:chrome
+```
+
+Open `chrome://extensions/`, enable Developer mode, choose **Load unpacked**, and select `dist/chrome`.
+
+## Usage
+
+1. Open an HTTP or HTTPS page.
+2. Open the Allow Copy popup.
+3. Turn on **Enable for this site**.
+4. Approve Chrome's permission prompt for that hostname.
+5. Expand **Advanced Options** to enable or disable individual fixes.
+
+The popup can close while Chrome displays the permission prompt.
+
+The background service worker completes the pending enablement after permission is granted.
+
+Protected browser pages and the Chrome Web Store are unsupported and leave the popup controls disabled.
+
+## Privacy and Permissions
+
+Allow Copy does not collect, transmit, or analyze browsing data.
+
+The required permissions are:
+
+- `activeTab` for the page associated with an explicit toolbar interaction.
+- `storage` for per-site settings and pending permission state.
+- `scripting` for the compiled content function.
+- `webNavigation` for restoring behavior after navigation on enabled sites.
+
+HTTP and HTTPS access remains in `optional_host_permissions` and is requested per hostname only when the user enables that site.
+
+## Development
+
+The extension uses Extension.js, React, strict TypeScript, and Radix UI Primitives, Themes, Colors, and Icons.
+
+```bash
+just help
+just dev
+just check
 just e2e
+just zip
+just clean
 ```
 
-Current coverage verifies:
+Equivalent npm commands are available in `package.json`.
 
-- popup can target the active test page,
-- enabling the site restores text selection,
-- the enabled state persists after reload.
-- `https://www.izaax.net/blog/` is covered as a real-world regression where the page blocks selection and context menu until the extension is enabled.
+Extension.js writes production output to `dist/chrome`.
 
-The Playwright fixture loads a temporary test-only copy of the extension with host permissions for `http://127.0.0.1/*` and `https://www.izaax.net/*` so the popup flow is automatable in headless Chromium without changing the shipping manifest.
+`just zip` creates `dist/chrome/allow-copy-<version>.zip` for Chrome Web Store upload.
 
-After making changes to the code:
+## Testing
 
-1. Go to `chrome://extensions/`
-2. Click the reload icon on the extension card
-3. Reload any test web pages
-4. Click the extension icon to open the popup and enable it for the test site
-5. Test that the functionality works (right-click, text selection, copying)
-6. Navigate away and back to verify functionality; if it doesn’t apply automatically, open the popup once to re-inject
-7. Test the toggle switch to verify enable/disable functionality
-8. Check that the badge shows a green checkmark (✓) on enabled sites
-
-### Technical Architecture
-
-**Manifest V3 Chrome Extension** with dynamic content script injection:
-
-- **manifest.json**: Extension configuration with `activeTab`, `storage`, `scripting`, and `webNavigation` permissions
-- **background.js**: Service worker that manages badge updates, tab monitoring, and content script injection
-  - Attempts to auto-inject content script on navigation for enabled sites
-  - Updates badge indicator when switching tabs or navigating
-  - Prevents duplicate injection with ping/pong mechanism
-  - Handles storage migration for backward compatibility
-- **storage-utils.js**: Storage utilities for managing site configurations
-  - Automatic migration from old boolean format to new object format
-  - Functions for reading/writing site configs with backward compatibility
-  - Per-site feature preferences management
-- **content.js**: Main functionality script injected into web pages
-  - Detects CSS and JavaScript-based restrictions before applying modifications
-  - Intercepts mouse events in capture phase to prevent website handlers
-  - Handles left-click (stops propagation to allow text selection)
-  - Handles right-click (prevents navigation while allowing context menu)
-  - Applies features selectively based on Advanced Options settings
-  - Overrides CSS properties dynamically based on enabled features
-  - Uses MutationObserver to maintain style overrides
-  - Real-time feature updates without page reload
-- **popup.html/popup.js/popup.css**: UI for toggling extension per-site
-  - Displays detected restrictions and enabled features
-  - Advanced Options for granular feature control
-  - Real-time updates when toggling features
-  - Per-site settings persistence
-
-### File Structure
-
+```bash
+npm test
+npm run typecheck
+npm run build:chrome
+npm run test:e2e
 ```
-.
-├── docs/                      # Documentation
-│   └── TESTING.md             # Testing instructions
-├── promo/                     # Promotional images
-│   ├── PROMOTIONAL_IMAGES.md  # Image specifications
-│   ├── convert.sh             # SVG to PNG converter
-│   ├── promo-screenshot.svg   # Screenshot (1280x800)
-│   ├── promo-tile.svg         # Small tile (440x280)
-│   └── promo-marquee.svg      # Marquee (1400x560)
-├── manifest.json              # Extension manifest (Manifest V3)
-├── background.js              # Background service worker
-├── storage-utils.js           # Storage utilities with migration
-├── content.js                 # Content script (main functionality)
-├── popup.html                 # Extension popup UI
-├── popup.js                   # Popup logic and state management
-├── popup.css                  # Popup styles
-├── test-restriction.html      # Test page with restrictions
-├── icon.svg                   # Icon source (vector)
-├── icon16.png                 # 16x16 toolbar icon
-├── icon48.png                 # 48x48 extension management icon
-├── icon128.png                # 128x128 Chrome Web Store icon
-├── justfile                   # Build automation
-├── README.md                  # This file
-└── AGENTS.md                  # Contributor guide
+
+Vitest covers shared behavior and React state transitions.
+
+Playwright builds and loads `dist/chrome`, then exercises only local fixtures so the suite does not depend on external sites.
+
+See [`docs/TESTING.md`](docs/TESTING.md) for manual and automated coverage.
+
+## Architecture
+
+```text
+src/
+├── manifest.json
+├── background.ts
+├── content/install-content-script.ts
+├── images/
+├── lib/
+├── popup/
+└── types/
 ```
+
+- `src/background.ts` updates the badge, coordinates permission completion, and injects enabled sites after navigation.
+- `src/content/install-content-script.ts` is a self-contained function compiled and serialized through `chrome.scripting.executeScript({ func })`.
+- `src/lib/storage.ts` preserves the existing sync schema and migrates legacy boolean entries.
+- `src/popup/` contains the React and Radix UI popup with controlled pending and rollback states.
+- `src/manifest.json` remains Chrome Manifest V3 with optional HTTP and HTTPS host access.
+
+## Known Limitations
+
+- Chrome internal pages and other protected extension pages cannot be modified.
+- `pointer-events: none` is detected but not currently overridden.
+- Sites with DRM or browser-enforced restrictions may remain unavailable.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details
-
-## Contributing
-
-Issues and pull requests are welcome!
+[MIT](LICENSE)
