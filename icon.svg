@@ -1,4 +1,5 @@
 <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <title>Allow Copy</title>
   <!-- Back copy (shifted right and down, more overlap) -->
   <rect x="26" y="22" width="100" height="104" rx="6" fill="white" stroke="#4CAF50" stroke-width="6"/>
 

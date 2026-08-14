@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blocked interactions regression fixture</title>
+    <style>
+      body,
+      article,
+      p {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article>
+        <h1>Blocked interactions regression fixture</h1>
+        <p>
+          This intentionally long paragraph reproduces a website that blocks selection, copying,
+          and the context menu until the extension restores normal browser interaction behavior.
+        </p>
+      </article>
+    </main>
+    <script>
+      document.onselectstart = (event) => event.preventDefault()
+      document.oncontextmenu = (event) => event.preventDefault()
+      document.oncopy = (event) => event.preventDefault()
+    </script>
+  </body>
+</html>

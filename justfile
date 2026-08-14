@@ -5,71 +5,35 @@ default:
 
 help:
     @echo "Available recipes:"
-    @echo "  just biome  - Run Biome lint and format with writes enabled"
-    @echo "  just zip    - Create a zip file for Chrome Web Store upload (fails if the zip already exists)"
-    @echo "  just check  - Run JavaScript syntax checks and unit tests"
-    @echo "  just test   - Run unit tests (if present)"
-    @echo "  just e2e    - Run Playwright end-to-end tests"
-    @echo "  just clean  - Remove generated zip files"
-    @echo "  just help   - Show this help message"
+    @echo "  just dev    - Start Extension.js with Chrome and hot reload"
+    @echo "  just build  - Build the production Chrome extension"
+    @echo "  just biome  - Format and lint with safe writes"
+    @echo "  just check  - Run lint, type checks, tests, and a production build"
+    @echo "  just test   - Run Vitest unit and component tests"
+    @echo "  just e2e    - Build and run local Playwright extension tests"
+    @echo "  just zip    - Create the versioned Chrome Web Store ZIP"
+    @echo "  just clean  - Remove Extension.js build output"
 
-zip:
-    @version="$$(grep -o '"version": "[^"]*"' manifest.json | cut -d'"' -f4)"; \
-    if [[ -z "$$version" ]]; then \
-        echo "Error: Could not extract version from manifest.json. Please check that the file exists and contains a valid 'version' field."; \
-        exit 1; \
-    fi; \
-    zip_name="allow-copy-$$version.zip"; \
-    if [[ -e "$$zip_name" ]]; then \
-        echo "Error: $$zip_name already exists. Run 'just clean' or remove it before creating a new archive."; \
-        exit 1; \
-    fi; \
-    command -v zip >/dev/null 2>&1 || { echo "Error: 'zip' command not found. Please install the 'zip' utility and try again."; exit 1; }; \
-    echo "Creating $$zip_name..."; \
-    zip "$$zip_name" \
-      manifest.json \
-      background.js \
-      content.js \
-      extension-logic.js \
-      site-enablement.js \
-      site-permissions.js \
-      storage-utils.js \
-      popup.html \
-      popup.js \
-      popup.css \
-      icon16.png \
-      icon48.png \
-      icon128.png; \
-    echo "✓ Created $$zip_name successfully"; \
-    echo "  Version: $$version"; \
-    echo "  Ready for Chrome Web Store upload"
+dev:
+    @npm run dev
 
-clean:
-    @echo "Cleaning up..."
-    @rm -f allow-copy-*.zip
-    @echo "✓ Cleaned up zip files"
+build:
+    @npm run build:chrome
 
 biome:
-    @npx biome lint --write .
-    @npx biome format --write .
+    @npx biome check --write .
 
 check:
-    @just biome
-    @node --check background.js
-    @node --check content.js
-    @node --check popup.js
-    @node --check storage-utils.js
-    @node --check extension-logic.js
-    @node --check site-enablement.js
-    @node --check site-permissions.js
-    @just test
+    @npm run check
 
 test:
-    @if compgen -G "test/*.test.js" >/dev/null; then \
-        node --test test/*.test.js; \
-    else \
-        echo "No unit tests found (skipping)."; \
-    fi
+    @npm test
 
 e2e:
-    @npx playwright test
+    @npm run test:e2e
+
+zip:
+    @npm run zip
+
+clean:
+    @npm run clean
