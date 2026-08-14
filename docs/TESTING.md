@@ -30,6 +30,7 @@ Automated coverage includes:
 - accessible popup switch, checkboxes, and Advanced Options disclosure,
 - enabled state persistence after navigation,
 - compiled `executeScript({ func })` content injection,
+- popup and background reinjection into dynamically added same-origin frames,
 - selection and context-menu restoration,
 - immediate and persisted per-feature updates,
 - unsupported-page handling,

@@ -1,4 +1,4 @@
-import type { BrowserContext, Page, Worker } from '@playwright/test'
+import type { BrowserContext, Frame, Page, Worker } from '@playwright/test'
 import { expect, test } from './fixtures'
 
 async function getActiveTabId(page: Page, serviceWorker: Worker): Promise<number> {
@@ -41,7 +41,7 @@ async function ensureAdvancedOptionsOpen(popup: Page): Promise<void> {
   if ((await advanced.getAttribute('aria-expanded')) !== 'true') await advanced.click()
 }
 
-async function probeInteractionRestrictions(page: Page) {
+async function probeInteractionRestrictions(page: Frame | Page) {
   return page.evaluate(() => {
     const paragraph = document.querySelector('p')
     if (!paragraph) return null
@@ -99,6 +99,101 @@ test('enables the active site and keeps the compiled content function active aft
 
   const reopenedPopup = await openPopup(context, extensionId, popupPath, tabId, page.url())
   await expect(reopenedPopup.getByRole('switch', { name: 'Enable for this site' })).toBeChecked()
+})
+
+test('reopening the popup installs handlers in dynamically added frames', async ({
+  page,
+  context,
+  serviceWorker,
+  extensionId,
+  popupPath,
+}) => {
+  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  const tabId = await getActiveTabId(page, serviceWorker)
+  const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
+  const toggle = popup.getByRole('switch', { name: 'Enable for this site' })
+  await toggle.click()
+  await expect(toggle).toBeChecked()
+
+  const frameNavigation = page.waitForEvent(
+    'framenavigated',
+    (frame) =>
+      frame.parentFrame() === page.mainFrame() &&
+      frame.url().includes('/test/fixtures/blocked-interactions.html?dynamic=1'),
+  )
+  await page.evaluate(() => {
+    const iframe = document.createElement('iframe')
+    iframe.src = '/test/fixtures/blocked-interactions.html?dynamic=1'
+    document.body.appendChild(iframe)
+  })
+  const dynamicFrame = await frameNavigation
+
+  expect(await probeInteractionRestrictions(dynamicFrame)).toMatchObject({
+    selectAllowed: false,
+    contextAllowed: false,
+    copyAllowed: false,
+    bodyUserSelect: 'none',
+    paragraphUserSelect: 'none',
+  })
+
+  const reopenedPopup = await openPopup(context, extensionId, popupPath, tabId, page.url())
+  await expect(reopenedPopup.getByRole('switch', { name: 'Enable for this site' })).toBeChecked()
+  await expect
+    .poll(async () => (await probeInteractionRestrictions(dynamicFrame))?.selectAllowed)
+    .toBe(true)
+  expect(await probeInteractionRestrictions(dynamicFrame)).toMatchObject({
+    selectAllowed: true,
+    contextAllowed: true,
+    copyAllowed: true,
+    bodyUserSelect: 'text',
+    paragraphUserSelect: 'text',
+  })
+})
+
+test('background reinjection reaches dynamically added frames', async ({
+  page,
+  context,
+  serviceWorker,
+  extensionId,
+  popupPath,
+}) => {
+  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  const tabId = await getActiveTabId(page, serviceWorker)
+  const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
+  const toggle = popup.getByRole('switch', { name: 'Enable for this site' })
+  await toggle.click()
+  await expect(toggle).toBeChecked()
+
+  const frameNavigation = page.waitForEvent(
+    'framenavigated',
+    (frame) =>
+      frame.parentFrame() === page.mainFrame() &&
+      frame.url().includes('/test/fixtures/blocked-interactions.html?dynamic=background'),
+  )
+  await page.evaluate(() => {
+    const iframe = document.createElement('iframe')
+    iframe.src = '/test/fixtures/blocked-interactions.html?dynamic=background'
+    document.body.appendChild(iframe)
+  })
+  const dynamicFrame = await frameNavigation
+  expect((await probeInteractionRestrictions(dynamicFrame))?.selectAllowed).toBe(false)
+
+  await page.bringToFront()
+  await serviceWorker.evaluate(async () => {
+    const result = await chrome.storage.sync.get(['sites'])
+    const sites = result.sites as Record<string, unknown>
+    const currentConfig = sites['127.0.0.1'] as Record<string, unknown>
+    await chrome.storage.sync.set({
+      sites: {
+        ...sites,
+        '127.0.0.1': { ...currentConfig, reinjectionRequested: true },
+      },
+    })
+  })
+
+  await expect
+    .poll(async () => (await probeInteractionRestrictions(dynamicFrame))?.selectAllowed)
+    .toBe(true)
 })
 
 test('exposes keyboard-operable labeled Radix controls', async ({

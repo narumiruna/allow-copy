@@ -459,11 +459,6 @@ export function installContentScript(): void {
   chrome.runtime.onMessage.addListener((request: unknown, _sender, sendResponse) => {
     if (!isRecord(request) || typeof request.action !== 'string') return
 
-    if (request.action === 'ping') {
-      sendResponse({ pong: true })
-      return
-    }
-
     if (request.action === 'getDetectionInfo') {
       sendResponse({
         detectionResults: detectRestrictions(),

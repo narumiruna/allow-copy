@@ -117,15 +117,6 @@ async function getCurrentTab(): Promise<RequestedTab | null> {
 
 async function injectContentScript(tabId: number): Promise<void> {
   try {
-    const response = (await chrome.tabs.sendMessage(tabId, { action: 'ping' })) as
-      | { pong?: boolean }
-      | undefined
-    if (response?.pong) return
-  } catch {
-    // A missing listener is the expected first-injection path.
-  }
-
-  try {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       func: installContentScript,

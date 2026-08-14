@@ -177,11 +177,11 @@ Exact compatible patch versions will be locked by `package-lock.json` during imp
 - [x] Port the service worker to TypeScript modules while preserving badge, navigation, storage, install, permission-added, and injection behavior; unit tests cover coordination and Playwright verifies the compiled injection and badge.
 - [x] Implement the React popup with Radix Primitives, Themes, Colors, and Icons; component tests verify accessible names, keyboard operation, controlled pending state, unsupported state, and failed-save rollback.
 - [x] Replace the remote Izaax regression with `test/fixtures/blocked-interactions.html`; Playwright now runs without external page requests.
-- [x] Update Playwright to build and load `dist/chrome` rather than raw source files; six browser tests cover enabled state, feature updates, reload persistence, URL-hint validation, unsupported pages, and compiled function injection.
+- [x] Update Playwright to build and load `dist/chrome` rather than raw source files; eight browser tests cover enabled state, feature updates, reload persistence, dynamic-frame reinjection, URL-hint validation, unsupported pages, and compiled function injection.
 - [x] Convert test files, Playwright configuration, local server, and version tooling to TypeScript; no maintained JavaScript, JSX, MJS, or CJS files remain outside generated or dependency directories.
 - [x] Update `justfile`, CI, release workflow, `.gitignore`, and the version bump path for Extension.js output; `npm run zip` produced and `unzip -l` inspected the versioned store artifact.
 - [x] Update `README.md`, `docs/TESTING.md`, and repository guidance to describe Extension.js commands, source layout, production output, and Radix/TypeScript architecture.
-- [x] Run formatting, linting, type checking, unit/component tests, production build, ZIP packaging, and local Playwright tests; `just biome`, `npm run check` (25 Vitest tests), `npm run test:e2e` (6 Playwright tests), `npm run zip`, ZIP inspection, and `npm audit --omit=dev` passed.
+- [x] Run formatting, linting, type checking, unit/component tests, production build, ZIP packaging, and local Playwright tests; `just biome`, `npm run check` (25 Vitest tests), `npm run test:e2e` (8 Playwright tests), `npm run zip`, ZIP inspection, and `npm audit --omit=dev` passed.
 - [x] Perform a final diff review for permission expansion, storage incompatibility, generated artifacts, console noise, inaccessible icon-only controls, and stale JavaScript references; no blocking finding remained, and hardening added malformed-storage normalization, unknown-field preservation, failed-mutation rollback, path-contained local serving, and target-tab URL validation.
 
 ## Acceptance Criteria

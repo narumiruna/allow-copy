@@ -21,15 +21,6 @@ async function isSiteEnabledForUrl(url: string): Promise<boolean> {
 
 async function injectContentScript(tabId: number): Promise<boolean> {
   try {
-    try {
-      const response = (await chrome.tabs.sendMessage(tabId, { action: 'ping' })) as
-        | { pong?: boolean }
-        | undefined
-      if (response?.pong) return true
-    } catch {
-      // A missing listener is the expected first-injection path.
-    }
-
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       func: installContentScript,
