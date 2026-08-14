@@ -1,35 +1,31 @@
-# Build scripts
-create_icons.sh
-
-# Distribution files
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
 *.zip
 
-# Promotional images (generated from SVG)
+# Extension.js local state
+.extension-js/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Generated promotional images
 promo/*.png
 
-# Test files
-test.html
+# Local test files
+/test.html
 
-# System files
+# System and editor files
 .DS_Store
 Thumbs.db
-
-# Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Claude Code
+# Local agent state
 .claude/
-
-# Node.js
-node_modules/
-
-# Playwright
-playwright-report/
-test-results/
-
-# Codex CLI
 .codex
