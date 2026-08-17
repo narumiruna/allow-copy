@@ -1,6 +1,6 @@
 {
   "name": "allow-copy",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Enable copying and text selection on websites that disable these features",
   "private": true,
   "type": "module",

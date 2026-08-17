@@ -55,12 +55,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Bump manifest version
+      - name: Bump project version
         env:
           BUMP_TYPE: ${{ inputs.bump }}
         run: |
           git fetch --tags --force
           version="$(npx tsx .github/scripts/bump-manifest-version.ts "$BUMP_TYPE")"
+          npm version "$version" --no-git-tag-version --allow-same-version
           tag="v$version"
 
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
@@ -87,7 +88,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/manifest.json
+          git add src/manifest.json package.json package-lock.json
           git commit -m "chore(release): bump version to $VERSION"
           git tag "$TAG"
           git push origin "HEAD:$GITHUB_REF_NAME"
