@@ -5,8 +5,9 @@ default:
 
 help:
     @echo "Available recipes:"
-    @echo "  just dev    - Start Extension.js with Chrome and hot reload"
-    @echo "  just build  - Build the production Chrome extension"
+    @echo "  just install - Install npm dependencies when needed"
+    @echo "  just dev     - Start Extension.js with Chrome and hot reload"
+    @echo "  just build   - Build the production Chrome extension"
     @echo "  just biome  - Format and lint with safe writes"
     @echo "  just check  - Run lint, type checks, tests, and a production build"
     @echo "  just test   - Run Vitest unit and component tests"
@@ -14,25 +15,33 @@ help:
     @echo "  just zip    - Create the versioned Chrome Web Store ZIP"
     @echo "  just clean  - Remove Extension.js build output"
 
-dev:
+install:
+    @if [[ ! -x node_modules/.bin/extension ]] || \
+        [[ ! -f node_modules/.package-lock.json ]] || \
+        [[ package.json -nt node_modules/.package-lock.json ]] || \
+        [[ package-lock.json -nt node_modules/.package-lock.json ]]; then \
+        npm install; \
+    fi
+
+dev: install
     @npm run dev
 
-build:
+build: install
     @npm run build:chrome
 
-biome:
+biome: install
     @npx biome check --write .
 
-check:
+check: install
     @npm run check
 
-test:
+test: install
     @npm test
 
-e2e:
+e2e: install
     @npm run test:e2e
 
-zip:
+zip: install
     @npm run zip
 
 clean:
