@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { TEST_ORIGIN } from './test/e2e/test-site'
 
 export default defineConfig({
   testDir: './test/e2e',
@@ -11,7 +12,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'tsx test/e2e/server.ts',
-    url: 'http://127.0.0.1:4173/test-restriction.html',
-    reuseExistingServer: !process.env.CI,
+    url: `${TEST_ORIGIN}/test-restriction.html`,
+    reuseExistingServer: false,
   },
 })

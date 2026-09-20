@@ -2,7 +2,7 @@ import { executeInstallContentScript } from '../content/install-content-script'
 import { classifyPopupInjectionError, parseSupportedHttpUrl } from '../lib/extension-logic'
 import { clearPendingSiteEnable, setPendingSiteEnable } from '../lib/site-enablement'
 import { ensurePersistentSiteAccess, hasPersistentSiteAccessForUrl } from '../lib/site-permissions'
-import { getSiteConfig, setSiteConfig, updateSiteFeatures } from '../lib/storage'
+import { getSiteConfig, setSiteConfig } from '../lib/storage'
 import type { DetectionResults, FeatureSettings, RequestedTab } from '../types/extension'
 
 const UI_STATE_KEY = 'uiState'
@@ -145,7 +145,7 @@ async function rollbackSiteConfig(
   features: FeatureSettings,
 ): Promise<void> {
   try {
-    await setSiteConfig(hostname, enabled, features)
+    await setSiteConfig(hostname, { enabled, features })
   } catch (rollbackError) {
     console.error('Failed to roll back site configuration:', rollbackError)
   }
@@ -173,7 +173,7 @@ export const chromePopupApi: PopupApi = {
 
     if (enabled && !(await hasPersistentSiteAccessForUrl(tab.url))) {
       enabled = false
-      await setSiteConfig(hostname, false, config.features)
+      await setSiteConfig(hostname, { enabled: false, features: config.features })
     }
 
     try {
@@ -224,7 +224,8 @@ export const chromePopupApi: PopupApi = {
     }
 
     try {
-      await setSiteConfig(hostname, enabled, enabled ? features : null)
+      const savedFeatures = enabled ? features : (await getSiteConfig(hostname)).features
+      await setSiteConfig(hostname, { enabled, features: savedFeatures })
       await sendSiteMessage(tab.id, {
         action: 'toggleSite',
         hostname,
@@ -248,7 +249,8 @@ export const chromePopupApi: PopupApi = {
 
   async setFeatures(tab, hostname, enabled, previousFeatures, nextFeatures) {
     try {
-      await updateSiteFeatures(hostname, nextFeatures)
+      const config = await getSiteConfig(hostname)
+      await setSiteConfig(hostname, { ...config, features: nextFeatures })
       if (enabled) {
         await sendSiteMessage(tab.id, {
           action: 'updateFeatures',

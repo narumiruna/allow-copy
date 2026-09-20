@@ -56,7 +56,6 @@ export function installContentScript(): void {
   let observer: MutationObserver | null = null
   let observerThrottleTimer: ReturnType<typeof setTimeout> | null = null
   let detectionResults: DetectionResults | null = null
-  let hasDetectedOnce = false
   let lastRightClickAt = 0
   let shouldPreventRightClickNavigation = false
   let domReadyCleanupRegistered = false
@@ -192,7 +191,7 @@ export function installContentScript(): void {
   }
 
   function detectRestrictions(): DetectionResults {
-    if (hasDetectedOnce && detectionResults) return detectionResults
+    if (detectionResults) return detectionResults
 
     const results: DetectionResults = {
       cssRestrictions: {
@@ -228,7 +227,6 @@ export function installContentScript(): void {
     }
 
     detectionResults = results
-    hasDetectedOnce = true
     return results
   }
 

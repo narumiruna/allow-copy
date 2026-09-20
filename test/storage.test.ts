@@ -4,25 +4,14 @@ import {
   getSiteConfig,
   migrateStorage,
   normalizeSiteConfig,
-  type StorageAreaLike,
   setSiteConfig,
-  updateSiteFeatures,
 } from '../src/lib/storage'
 
-function createStorageArea(initialSites: Record<string, unknown> = {}) {
-  let sites = structuredClone(initialSites)
-  const area: StorageAreaLike = {
-    async get() {
-      return { sites: structuredClone(sites) }
-    },
-    async set(items) {
-      if (Object.hasOwn(items, 'sites')) {
-        sites = structuredClone(items.sites as Record<string, unknown>)
-      }
-    },
-  }
+import { createStorageArea as createMemoryStorage } from './helpers/storage'
 
-  return { area, getSites: () => sites }
+function createStorageArea(sites: Record<string, unknown> = {}) {
+  const area = createMemoryStorage({ sites })
+  return { area, getSites: () => area.snapshot().sites as Record<string, unknown> }
 }
 
 describe('site storage', () => {
@@ -53,7 +42,8 @@ describe('site storage', () => {
       },
     })
 
-    await setSiteConfig('example.com', false, null, storage.area)
+    const config = await getSiteConfig('example.com', storage.area)
+    await setSiteConfig('example.com', { ...config, enabled: false }, storage.area)
     await expect(getSiteConfig('example.com', storage.area)).resolves.toEqual({
       enabled: false,
       features: { ...DEFAULT_FEATURES, textSelection: false, copyPaste: false },
@@ -67,11 +57,58 @@ describe('site storage', () => {
     })
     const features = { ...DEFAULT_FEATURES, contextMenu: false }
 
-    await updateSiteFeatures('example.com', features, storage.area)
+    const config = await getSiteConfig('example.com', storage.area)
+    await setSiteConfig('example.com', { ...config, features }, storage.area)
 
     await expect(getSiteConfig('example.com', storage.area)).resolves.toEqual({
       enabled: false,
       features,
+    })
+  })
+
+  it('preserves unknown feature fields and unrelated sites when writing', async () => {
+    const storage = createStorageArea({
+      'example.com': {
+        enabled: false,
+        futureField: 'keep',
+        features: { ...DEFAULT_FEATURES, futureFeature: { keep: true } },
+      },
+      'other.example': true,
+    })
+    const features = { ...DEFAULT_FEATURES, cursor: false }
+
+    await setSiteConfig('example.com', { enabled: true, features }, storage.area)
+
+    expect(storage.getSites()).toEqual({
+      'example.com': {
+        enabled: true,
+        futureField: 'keep',
+        features: { ...features, futureFeature: { keep: true } },
+      },
+      'other.example': true,
+    })
+  })
+
+  it.each([
+    { record: true, enabled: true, features: DEFAULT_FEATURES },
+    { record: false, enabled: false, features: DEFAULT_FEATURES },
+    { record: null, enabled: false, features: DEFAULT_FEATURES },
+    { record: [], enabled: false, features: DEFAULT_FEATURES },
+    {
+      record: { features: { cursor: false } },
+      enabled: true,
+      features: { ...DEFAULT_FEATURES, cursor: false },
+    },
+  ])('reads legacy or malformed record $record safely', async ({ record, enabled, features }) => {
+    const storage = createStorageArea({ 'example.com': record })
+    expect(await getSiteConfig('example.com', storage.area)).toEqual({ enabled, features })
+  })
+
+  it('fails closed for a malformed sites container', async () => {
+    const storage = createMemoryStorage({ sites: [] })
+    expect(await getSiteConfig('example.com', storage)).toEqual({
+      enabled: false,
+      features: DEFAULT_FEATURES,
     })
   })
 
