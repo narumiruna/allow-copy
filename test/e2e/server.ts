@@ -2,9 +2,9 @@ import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { TEST_PORT as PORT } from './test-site'
 
 const HOST = '127.0.0.1'
-const PORT = 4173
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 const CONTENT_TYPES: Record<string, string> = {

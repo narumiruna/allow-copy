@@ -112,6 +112,38 @@ describe('popup application', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Could not save feature settings')
   })
 
+  it('shows permission recovery guidance when the popup survives denial', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      createApi({
+        setEnabled: vi.fn(async () => ({ enabled: false, permissionDenied: true })),
+      }),
+    )
+    const toggle = await screen.findByRole('switch', { name: 'Enable for this site' })
+    await user.click(toggle)
+    await waitFor(() => expect(toggle).not.toBeChecked())
+    expect(toggle).not.toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Allow this site in the browser prompt to keep it enabled',
+    )
+  })
+
+  it('restores the switch and allows retry after an enablement save fails', async () => {
+    const user = userEvent.setup()
+    renderApp(
+      createApi({
+        setEnabled: vi.fn(async () => {
+          throw new Error('save failed')
+        }),
+      }),
+    )
+    const toggle = await screen.findByRole('switch', { name: 'Enable for this site' })
+    await user.click(toggle)
+    await waitFor(() => expect(toggle).not.toBeChecked())
+    expect(toggle).not.toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Could not save site setting')
+  })
+
   it('keeps unavailable detection state across successful mutations', async () => {
     const unavailableState: ReadyPopupState = {
       ...readyState,

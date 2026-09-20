@@ -25,6 +25,14 @@ just e2e
 
 Playwright loads `dist/chrome` and uses only local pages served from `127.0.0.1`.
 
+The suite starts its own server and fails if its port is occupied; it never reuses an unrelated server. Choose another port when needed:
+
+```bash
+ALLOW_COPY_TEST_PORT=4273 npm run test:e2e
+```
+
+Keep both interaction fixtures: `test-restriction.html` installs handlers at DOMContentLoaded and inherits body selection restrictions; `test/fixtures/blocked-interactions.html` installs handlers inline and explicitly restricts paragraphs.
+
 Automated coverage includes:
 
 - accessible popup switch, checkboxes, and Advanced Options disclosure,
@@ -61,8 +69,8 @@ Verify this path after permission-related changes:
 2. Ensure the site is disabled in sync storage.
 3. Enable the site from the popup.
 4. Approve the Chrome permission prompt even if the popup closes.
-5. Reopen the popup and verify the site is enabled.
-6. Deny the prompt on another hostname and verify the switch returns to off with recovery guidance.
+5. Reopen the popup and verify the site is enabled. If the permission prompt destroyed the popup, reload the page to apply the fixes; the current background finalization saves enablement but does not reconfigure an already-injected disabled document.
+6. Deny the prompt on another hostname and verify the site stays disabled and can be retried. Recovery guidance appears if the popup survives; otherwise reopen it and retry the off switch.
 
 ## Storage Compatibility
 

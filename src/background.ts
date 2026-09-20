@@ -1,12 +1,8 @@
 import { executeInstallContentScript } from './content/install-content-script'
 import { parseSupportedHostname, shouldLogBackgroundInjectionError } from './lib/extension-logic'
-import {
-  clearPendingSiteEnable,
-  finalizePendingSiteEnables,
-  getPendingSiteEnable,
-} from './lib/site-enablement'
+import { finalizePendingSiteEnables } from './lib/site-enablement'
 import { hasPersistentSiteAccessForUrl } from './lib/site-permissions'
-import { isSiteEnabled, migrateStorage, setSiteConfig } from './lib/storage'
+import { isSiteEnabled, migrateStorage } from './lib/storage'
 
 const BADGE_CONFIG = {
   enabled: { text: '✓', color: '#46a758' },
@@ -80,11 +76,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 })
 
 chrome.permissions.onAdded.addListener((permissions) => {
-  void finalizePendingSiteEnables(permissions.origins ?? [], {
-    getPending: getPendingSiteEnable,
-    clearPending: clearPendingSiteEnable,
-    setSiteConfig,
-  })
+  void finalizePendingSiteEnables(permissions.origins ?? [])
     .then(async (finalizedHostnames) => {
       if (finalizedHostnames.length === 0) return
       const finalized = new Set(finalizedHostnames)

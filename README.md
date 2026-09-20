@@ -71,6 +71,8 @@ Extension.js writes production output to `dist/chrome`.
 
 `just zip` creates `dist/chrome/allow-copy-<version>.zip` for Chrome Web Store upload.
 
+`src/manifest.json` is the sole project version source; the private npm package is unversioned.
+
 ## Testing
 
 ```bash

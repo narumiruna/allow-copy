@@ -1,13 +1,7 @@
 import type { FeatureSettings, PendingSiteEnable } from '../types/extension'
-import { normalizeFeatures, type StorageAreaLike } from './storage'
+import { normalizeFeatures, type StorageAreaLike, setSiteConfig } from './storage'
 
 export const PENDING_SITE_ENABLE_KEY = 'pendingSiteEnable'
-
-interface FinalizeDependencies {
-  getPending(hostname: string): Promise<PendingSiteEnable | null>
-  clearPending(hostname: string): Promise<void>
-  setSiteConfig(hostname: string, enabled: boolean, features: FeatureSettings): Promise<void>
-}
 
 function getSessionStorage(): StorageAreaLike {
   return chrome.storage.session
@@ -77,16 +71,17 @@ export async function clearPendingSiteEnable(
 
 export async function finalizePendingSiteEnables(
   origins: readonly string[],
-  dependencies: FinalizeDependencies,
+  sessionStorage: StorageAreaLike = chrome.storage.session,
+  syncStorage: StorageAreaLike = chrome.storage.sync,
 ): Promise<string[]> {
   const finalizedHostnames: string[] = []
 
   for (const hostname of getHostnamesFromOrigins(origins)) {
-    const pending = await dependencies.getPending(hostname)
+    const pending = await getPendingSiteEnable(hostname, sessionStorage)
     if (!pending) continue
 
-    await dependencies.setSiteConfig(hostname, true, pending.features)
-    await dependencies.clearPending(hostname)
+    await setSiteConfig(hostname, { enabled: true, features: pending.features }, syncStorage)
+    await clearPendingSiteEnable(hostname, sessionStorage)
     finalizedHostnames.push(hostname)
   }
 

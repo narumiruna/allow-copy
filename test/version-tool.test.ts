@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { bumpVersion, updateManifestVersionText } from '../.github/scripts/bump-manifest-version'
+import npmPackage from '../package.json'
+import lockfile from '../package-lock.json'
+import manifest from '../src/manifest.json'
 
 describe('manifest version tool', () => {
+  it('uses only the manifest as the private project version source', () => {
+    expect(npmPackage.private).toBe(true)
+    expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/u)
+    expect(npmPackage).not.toHaveProperty('version')
+    expect(lockfile).not.toHaveProperty('version')
+    expect(lockfile.packages['']).not.toHaveProperty('version')
+  })
+
   it('supports semantic major, minor, and patch bumps', () => {
     expect(bumpVersion('1.2.3', 'patch')).toBe('1.2.4')
     expect(bumpVersion('1.2.3', 'minor')).toBe('1.3.0')

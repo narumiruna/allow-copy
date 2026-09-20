@@ -76,37 +76,24 @@ export async function isSiteEnabled(
 
 export async function setSiteConfig(
   hostname: string,
-  enabled: boolean,
-  features: FeatureSettings | null = null,
+  config: SiteConfig | { enabled: false },
   storageArea: StorageAreaLike = getSyncStorage(),
 ): Promise<void> {
   const sites = await getRawSites(storageArea)
   const existingRaw = isRecord(sites[hostname]) ? sites[hostname] : {}
   const existingFeaturesRaw = isRecord(existingRaw.features) ? existingRaw.features : {}
-  const existingConfig = normalizeSiteConfig(existingRaw)
-  const nextFeatures = normalizeFeatures(
-    features ?? (enabled ? DEFAULT_FEATURES : existingConfig.features),
-  )
-
+  // Preserve features from this write's snapshot when disabling without feature changes.
+  const features = 'features' in config ? config.features : existingFeaturesRaw
   sites[hostname] = {
     ...existingRaw,
-    enabled,
+    enabled: config.enabled,
     features: {
       ...existingFeaturesRaw,
-      ...nextFeatures,
+      ...normalizeFeatures(features),
     },
   }
 
   await storageArea.set({ [SITES_KEY]: sites })
-}
-
-export async function updateSiteFeatures(
-  hostname: string,
-  features: FeatureSettings,
-  storageArea: StorageAreaLike = getSyncStorage(),
-): Promise<void> {
-  const config = await getSiteConfig(hostname, storageArea)
-  await setSiteConfig(hostname, config.enabled, features, storageArea)
 }
 
 export async function migrateStorage(

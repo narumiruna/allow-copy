@@ -1,5 +1,6 @@
 import type { BrowserContext, Frame, Page, Worker } from '@playwright/test'
 import { expect, test } from './fixtures'
+import { TEST_ORIGIN } from './test-site'
 
 async function getActiveTabId(page: Page, serviceWorker: Worker): Promise<number> {
   await page.bringToFront()
@@ -64,6 +65,39 @@ async function probeInteractionRestrictions(page: Frame | Page) {
   })
 }
 
+for (const { fixture, handlerReady, paragraphUserSelect } of [
+  { fixture: 'test-restriction.html', handlerReady: false, paragraphUserSelect: 'auto' },
+  {
+    fixture: 'test/fixtures/blocked-interactions.html',
+    handlerReady: true,
+    paragraphUserSelect: 'none',
+  },
+]) {
+  test(`preserves distinct timing and CSS coverage in ${fixture}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      document.addEventListener(
+        'DOMContentLoaded',
+        () => {
+          Reflect.set(window, '__copyHandlerAtDomReady', typeof document.oncopy === 'function')
+        },
+        { once: true },
+      )
+    })
+    await page.goto(`${TEST_ORIGIN}/${fixture}`)
+    expect(await page.evaluate(() => Reflect.get(window, '__copyHandlerAtDomReady'))).toBe(
+      handlerReady,
+    )
+    expect(
+      await page.evaluate(() => {
+        document.body.style.userSelect = 'auto'
+        const paragraph = document.querySelector('p')
+        return paragraph ? getComputedStyle(paragraph).userSelect : null
+      }),
+    ).toBe(paragraphUserSelect)
+    expect((await probeInteractionRestrictions(page))?.copyAllowed).toBe(false)
+  })
+}
+
 test('enables the active site and keeps the compiled content function active after reload', async ({
   page,
   context,
@@ -71,7 +105,7 @@ test('enables the active site and keeps the compiled content function active aft
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const tabId = await getActiveTabId(page, serviceWorker)
   const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
 
@@ -82,9 +116,19 @@ test('enables the active site and keeps the compiled content function active aft
     'Text selection disabled (CSS)',
   )
 
+  const detectionBefore = await serviceWorker.evaluate(
+    (id) => chrome.tabs.sendMessage(id, { action: 'getDetectionInfo' }),
+    tabId,
+  )
   await toggle.click()
   await expect(toggle).toBeChecked()
   await expect(popup.locator('#status')).toContainText('Enabled for this site')
+  expect(
+    await serviceWorker.evaluate(
+      (id) => chrome.tabs.sendMessage(id, { action: 'getDetectionInfo' }),
+      tabId,
+    ),
+  ).toEqual(detectionBefore)
 
   await page.bringToFront()
   expect((await selectRestrictedParagraph(page)).length).toBeGreaterThan(0)
@@ -108,7 +152,7 @@ test('reopening the popup installs handlers in dynamically added frames', async 
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const tabId = await getActiveTabId(page, serviceWorker)
   const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
   const toggle = popup.getByRole('switch', { name: 'Enable for this site' })
@@ -157,7 +201,7 @@ test('background reinjection reaches dynamically added frames', async ({
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const tabId = await getActiveTabId(page, serviceWorker)
   const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
   const toggle = popup.getByRole('switch', { name: 'Enable for this site' })
@@ -203,7 +247,7 @@ test('exposes keyboard-operable labeled Radix controls', async ({
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const popup = await openPopup(
     context,
     extensionId,
@@ -232,7 +276,7 @@ test('applies and persists individual feature changes', async ({
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const tabId = await getActiveTabId(page, serviceWorker)
   const popup = await openPopup(context, extensionId, popupPath, tabId, page.url())
 
@@ -260,7 +304,7 @@ test('restores blocked selection and context menu on the local regression fixtur
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test/fixtures/blocked-interactions.html')
+  await page.goto(`${TEST_ORIGIN}/test/fixtures/blocked-interactions.html`)
   const before = await probeInteractionRestrictions(page)
   expect(before).toMatchObject({
     selectAllowed: false,
@@ -299,7 +343,7 @@ test('rejects a supported URL hint that does not match the target tab', async ({
   extensionId,
   popupPath,
 }) => {
-  await page.goto('http://127.0.0.1:4173/test-restriction.html')
+  await page.goto(`${TEST_ORIGIN}/test-restriction.html`)
   const popup = await openPopup(
     context,
     extensionId,
