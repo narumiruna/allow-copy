@@ -77,12 +77,7 @@ jobs:
         run: npm run check
 
       - name: Build extension ZIP
-        run: |
-          npx extension build \
-            --browser=chrome \
-            --zip \
-            --zip-filename="$ZIP_NAME" \
-            --no-telemetry
+        run: npm run zip
 
       - name: Commit and tag version
         run: |

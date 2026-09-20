@@ -1,14 +1,9 @@
-import { installContentScript } from '../content/install-content-script'
+import { executeInstallContentScript } from '../content/install-content-script'
 import { classifyPopupInjectionError, parseSupportedHttpUrl } from '../lib/extension-logic'
 import { clearPendingSiteEnable, setPendingSiteEnable } from '../lib/site-enablement'
 import { ensurePersistentSiteAccess, hasPersistentSiteAccessForUrl } from '../lib/site-permissions'
-import { getSiteConfig, normalizeFeatures, setSiteConfig, updateSiteFeatures } from '../lib/storage'
-import type {
-  DetectionInfo,
-  DetectionResults,
-  FeatureSettings,
-  RequestedTab,
-} from '../types/extension'
+import { getSiteConfig, setSiteConfig, updateSiteFeatures } from '../lib/storage'
+import type { DetectionResults, FeatureSettings, RequestedTab } from '../types/extension'
 
 const UI_STATE_KEY = 'uiState'
 
@@ -19,7 +14,6 @@ export interface ReadyPopupState {
   enabled: boolean
   features: FeatureSettings
   detectionResults: DetectionResults | null
-  detectionUnavailable: boolean
   advancedExpanded: boolean
 }
 
@@ -34,11 +28,6 @@ export type PopupLoadState = ReadyPopupState | UnavailablePopupState
 export interface EnabledMutationResult {
   enabled: boolean
   permissionDenied: boolean
-  detectionResults: DetectionResults | null
-}
-
-export interface FeatureMutationResult {
-  detectionResults: DetectionResults | null
 }
 
 export interface PopupApi {
@@ -55,7 +44,7 @@ export interface PopupApi {
     enabled: boolean,
     previousFeatures: FeatureSettings,
     nextFeatures: FeatureSettings,
-  ): Promise<FeatureMutationResult>
+  ): Promise<void>
   setAdvancedExpanded(expanded: boolean): Promise<void>
 }
 
@@ -78,14 +67,10 @@ function isDetectionResults(value: unknown): value is DetectionResults {
   ].every((item) => typeof item === 'boolean')
 }
 
-function parseDetectionInfo(value: unknown): DetectionInfo | null {
-  if (!isRecord(value) || !isDetectionResults(value.detectionResults)) return null
-
-  return {
-    detectionResults: value.detectionResults,
-    isEnabled: value.isEnabled === true,
-    features: normalizeFeatures(value.features),
-  }
+function parseDetectionResults(value: unknown): DetectionResults | null {
+  return isRecord(value) && isDetectionResults(value.detectionResults)
+    ? value.detectionResults
+    : null
 }
 
 function getRequestedTab(): RequestedTab | null {
@@ -117,11 +102,7 @@ async function getCurrentTab(): Promise<RequestedTab | null> {
 
 async function injectContentScript(tabId: number): Promise<void> {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
-      func: installContentScript,
-      injectImmediately: true,
-    })
+    await executeInstallContentScript(tabId)
   } catch (error) {
     const classification = classifyPopupInjectionError(error)
     if (classification.shouldLog) console.error('Content script injection failed:', error)
@@ -129,9 +110,11 @@ async function injectContentScript(tabId: number): Promise<void> {
   }
 }
 
-async function getDetectionInfo(tabId: number): Promise<DetectionInfo | null> {
+async function getDetectionResults(tabId: number): Promise<DetectionResults | null> {
   try {
-    return parseDetectionInfo(await chrome.tabs.sendMessage(tabId, { action: 'getDetectionInfo' }))
+    return parseDetectionResults(
+      await chrome.tabs.sendMessage(tabId, { action: 'getDetectionInfo' }),
+    )
   } catch {
     return null
   }
@@ -203,8 +186,8 @@ export const chromePopupApi: PopupApi = {
       }
     }
 
-    const [detectionInfo, advancedExpanded] = await Promise.all([
-      getDetectionInfo(tab.id),
+    const [detectionResults, advancedExpanded] = await Promise.all([
+      getDetectionResults(tab.id),
       getAdvancedExpanded(),
     ])
 
@@ -214,8 +197,7 @@ export const chromePopupApi: PopupApi = {
       hostname,
       enabled,
       features: config.features,
-      detectionResults: detectionInfo?.detectionResults ?? null,
-      detectionUnavailable: detectionInfo === null,
+      detectionResults,
       advancedExpanded,
     }
   },
@@ -235,7 +217,7 @@ export const chromePopupApi: PopupApi = {
 
       if (!granted) {
         await clearPendingSiteEnable(hostname)
-        return { enabled: false, permissionDenied: true, detectionResults: null }
+        return { enabled: false, permissionDenied: true }
       }
     } else {
       await clearPendingSiteEnable(hostname)
@@ -261,11 +243,7 @@ export const chromePopupApi: PopupApi = {
       throw error
     }
 
-    return {
-      enabled,
-      permissionDenied: false,
-      detectionResults: (await getDetectionInfo(tab.id))?.detectionResults ?? null,
-    }
+    return { enabled, permissionDenied: false }
   },
 
   async setFeatures(tab, hostname, enabled, previousFeatures, nextFeatures) {
@@ -288,12 +266,6 @@ export const chromePopupApi: PopupApi = {
         }).catch(() => undefined)
       }
       throw error
-    }
-
-    return {
-      detectionResults: enabled
-        ? ((await getDetectionInfo(tab.id))?.detectionResults ?? null)
-        : null,
     }
   },
 

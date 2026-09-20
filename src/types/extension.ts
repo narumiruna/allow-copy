@@ -26,12 +26,6 @@ export interface DetectionResults {
   jsRestrictions: JavaScriptRestrictions
 }
 
-export interface DetectionInfo {
-  detectionResults: DetectionResults
-  isEnabled: boolean
-  features: FeatureSettings
-}
-
 export interface PendingSiteEnable {
   hostname: string
   features: FeatureSettings

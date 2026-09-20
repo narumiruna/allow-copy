@@ -27,7 +27,6 @@ const readyState: ReadyPopupState = {
     cssRestrictions: { userSelect: true, pointerEvents: false, cursor: false },
     jsRestrictions: { contextmenu: true, selectstart: false, copy: false },
   },
-  detectionUnavailable: false,
   advancedExpanded: false,
 }
 
@@ -37,9 +36,8 @@ function createApi(overrides: Partial<PopupApi> = {}): PopupApi {
     setEnabled: vi.fn(async (_tab, _hostname, enabled) => ({
       enabled,
       permissionDenied: false,
-      detectionResults: readyState.detectionResults,
     })),
-    setFeatures: vi.fn(async () => ({ detectionResults: readyState.detectionResults })),
+    setFeatures: vi.fn(async () => undefined),
     setAdvancedExpanded: vi.fn(async () => undefined),
     ...overrides,
   }
@@ -78,7 +76,6 @@ describe('popup application', () => {
               resolve({
                 enabled: true,
                 permissionDenied: false,
-                detectionResults: readyState.detectionResults,
               })
           }),
       ),
@@ -113,6 +110,27 @@ describe('popup application', () => {
 
     await waitFor(() => expect(feature).toBeChecked())
     expect(screen.getByRole('alert')).toHaveTextContent('Could not save feature settings')
+  })
+
+  it('keeps unavailable detection state across successful mutations', async () => {
+    const unavailableState: ReadyPopupState = {
+      ...readyState,
+      detectionResults: null,
+    }
+    const user = userEvent.setup()
+    renderApp(createApi({ load: vi.fn(async () => unavailableState) }))
+
+    expect(await screen.findByText('Restriction details are unavailable')).toBeVisible()
+
+    const toggle = screen.getByRole('switch', { name: 'Enable for this site' })
+    await user.click(toggle)
+    await waitFor(() => expect(toggle).not.toBeDisabled())
+    expect(screen.getByText('Restriction details are unavailable')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Advanced Options' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Enable text selection' }))
+    await waitFor(() => expect(toggle).not.toBeDisabled())
+    expect(screen.getByText('Restriction details are unavailable')).toBeVisible()
   })
 
   it('disables the primary action on unsupported pages', async () => {

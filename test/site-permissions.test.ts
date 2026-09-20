@@ -18,6 +18,7 @@ describe('site permissions', () => {
 
   it('builds an origin pattern for a supported page only', () => {
     expect(getPermissionOriginForUrl('https://example.com/path?x=1')).toBe('https://example.com/*')
+    expect(getPermissionOriginForUrl('https://example.com:8443/path')).toBe('https://example.com/*')
     expect(getPermissionOriginForUrl('chrome://settings')).toBeNull()
     expect(getPermissionOriginForUrl('bad url')).toBeNull()
   })

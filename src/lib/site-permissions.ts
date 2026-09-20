@@ -1,3 +1,5 @@
+import { parseSupportedHttpUrl } from './extension-logic'
+
 export interface PermissionsApi {
   contains(permissions: { origins: string[] }): Promise<boolean>
   request?: (permissions: { origins: string[] }) => Promise<boolean>
@@ -8,15 +10,8 @@ function getPermissionsApi(): PermissionsApi {
 }
 
 export function getPermissionOriginForUrl(rawUrl: unknown): string | null {
-  if (typeof rawUrl !== 'string' || rawUrl.length === 0) return null
-
-  try {
-    const parsedUrl = new URL(rawUrl)
-    const supported = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-    return supported && parsedUrl.hostname ? `${parsedUrl.protocol}//${parsedUrl.hostname}/*` : null
-  } catch {
-    return null
-  }
+  const parsedUrl = parseSupportedHttpUrl(rawUrl)
+  return parsedUrl ? `${parsedUrl.protocol}//${parsedUrl.hostname}/*` : null
 }
 
 export function getPermissionOriginsForHostname(hostname: string): string[] {
