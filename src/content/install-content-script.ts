@@ -460,11 +460,7 @@ export function installContentScript(): void {
     if (!isRecord(request) || typeof request.action !== 'string') return
 
     if (request.action === 'getDetectionInfo') {
-      sendResponse({
-        detectionResults: detectRestrictions(),
-        isEnabled,
-        features: { ...features },
-      })
+      sendResponse({ detectionResults: detectRestrictions() })
       return
     }
 
@@ -480,5 +476,13 @@ export function installContentScript(): void {
       initialize(true, request.features)
       sendResponse({ success: true })
     }
+  })
+}
+
+export async function executeInstallContentScript(tabId: number): Promise<void> {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    func: installContentScript,
+    injectImmediately: true,
   })
 }

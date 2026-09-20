@@ -1,5 +1,4 @@
 export interface InjectionErrorClassification {
-  success: boolean
   error?: string
   shouldLog: boolean
 }
@@ -29,17 +28,16 @@ export function classifyPopupInjectionError(error: unknown): InjectionErrorClass
 
   if (message.includes('Cannot access')) {
     return {
-      success: false,
       error: 'Cannot access this page',
       shouldLog: false,
     }
   }
 
   if (message && !message.includes('duplicate')) {
-    return { success: false, error: message, shouldLog: true }
+    return { error: message, shouldLog: true }
   }
 
-  return { success: true, shouldLog: false }
+  return { shouldLog: false }
 }
 
 export function shouldLogBackgroundInjectionError(error: unknown): boolean {

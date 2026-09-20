@@ -1,4 +1,4 @@
-import { installContentScript } from './content/install-content-script'
+import { executeInstallContentScript } from './content/install-content-script'
 import { parseSupportedHostname, shouldLogBackgroundInjectionError } from './lib/extension-logic'
 import {
   clearPendingSiteEnable,
@@ -6,7 +6,7 @@ import {
   getPendingSiteEnable,
 } from './lib/site-enablement'
 import { hasPersistentSiteAccessForUrl } from './lib/site-permissions'
-import { getAllSites, isSiteEnabled, migrateStorage, setSiteConfig } from './lib/storage'
+import { isSiteEnabled, migrateStorage, setSiteConfig } from './lib/storage'
 
 const BADGE_CONFIG = {
   enabled: { text: '✓', color: '#46a758' },
@@ -21,11 +21,7 @@ async function isSiteEnabledForUrl(url: string): Promise<boolean> {
 
 async function injectContentScript(tabId: number): Promise<boolean> {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
-      func: installContentScript,
-      injectImmediately: true,
-    })
+    await executeInstallContentScript(tabId)
     return true
   } catch (error) {
     if (shouldLogBackgroundInjectionError(error)) {
@@ -37,12 +33,7 @@ async function injectContentScript(tabId: number): Promise<boolean> {
 
 async function updateBadge(tabId: number, url: string | undefined): Promise<void> {
   try {
-    if (!url || !parseSupportedHostname(url)) {
-      await chrome.action.setBadgeText({ text: BADGE_CONFIG.disabled.text, tabId })
-      return
-    }
-
-    if (!(await isSiteEnabledForUrl(url))) {
+    if (!url || !(await isSiteEnabledForUrl(url))) {
       await chrome.action.setBadgeText({ text: BADGE_CONFIG.disabled.text, tabId })
       return
     }
@@ -122,17 +113,9 @@ chrome.webNavigation.onCommitted.addListener((details) => {
 chrome.runtime.onInstalled.addListener(() => {
   void migrateStorage()
     .then(async () => {
-      const sites = await getAllSites()
       const tabs = await chrome.tabs.query({})
-
       for (const tab of tabs) {
-        const hostname = parseSupportedHostname(tab.url)
-        if (!hostname || typeof tab.id !== 'number') continue
-
-        if (sites[hostname]?.enabled && tab.url && (await hasPersistentSiteAccessForUrl(tab.url))) {
-          await injectContentScript(tab.id)
-        }
-        await updateBadge(tab.id, tab.url)
+        if (typeof tab.id === 'number') await updateBadge(tab.id, tab.url)
       }
     })
     .catch((error: unknown) => {

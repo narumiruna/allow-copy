@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_FEATURES,
-  getAllSites,
   getSiteConfig,
   migrateStorage,
   normalizeSiteConfig,
@@ -43,15 +42,6 @@ describe('site storage', () => {
       features: DEFAULT_FEATURES,
     })
     expect(normalizeSiteConfig(null)).toEqual({ enabled: false, features: DEFAULT_FEATURES })
-  })
-
-  it('returns normalized site records without mutating storage', async () => {
-    const storage = createStorageArea({ 'example.com': true })
-
-    await expect(getAllSites(storage.area)).resolves.toEqual({
-      'example.com': { enabled: true, features: DEFAULT_FEATURES },
-    })
-    expect(storage.getSites()).toEqual({ 'example.com': true })
   })
 
   it('keeps existing features and unknown fields when disabling', async () => {

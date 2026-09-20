@@ -96,7 +96,7 @@ function StatusCallout({ status }: { status: StatusMessage }) {
 }
 
 function RestrictionList({ state }: { state: Extract<PopupLoadState, { kind: 'ready' }> }) {
-  if (state.detectionUnavailable) {
+  if (state.detectionResults === null) {
     return (
       <Card id="detectedRestrictions" className="summary-card" variant="surface">
         <Flex gap="2" align="center">
@@ -111,15 +111,15 @@ function RestrictionList({ state }: { state: Extract<PopupLoadState, { kind: 're
 
   const restrictions: string[] = []
   const results = state.detectionResults
-  if (results?.cssRestrictions.userSelect) restrictions.push('Text selection disabled (CSS)')
-  if (results?.jsRestrictions.contextmenu) {
+  if (results.cssRestrictions.userSelect) restrictions.push('Text selection disabled (CSS)')
+  if (results.jsRestrictions.contextmenu) {
     restrictions.push('Right-click menu blocked (JavaScript)')
   }
-  if (results?.jsRestrictions.copy || results?.jsRestrictions.selectstart) {
+  if (results.jsRestrictions.copy || results.jsRestrictions.selectstart) {
     restrictions.push('Copy/cut operations blocked')
   }
-  if (results?.cssRestrictions.cursor) restrictions.push('Mouse cursor restrictions')
-  if (results?.cssRestrictions.pointerEvents) {
+  if (results.cssRestrictions.cursor) restrictions.push('Mouse cursor restrictions')
+  if (results.cssRestrictions.pointerEvents) {
     restrictions.push('Mouse interaction disabled (CSS)')
   }
 
@@ -213,13 +213,7 @@ export function App({ api = chromePopupApi }: AppProps) {
       try {
         const result = await api.setEnabled(state.tab, state.hostname, nextEnabled, state.features)
         setState((current) =>
-          current?.kind === 'ready'
-            ? {
-                ...current,
-                enabled: result.enabled,
-                detectionResults: result.detectionResults ?? current.detectionResults,
-              }
-            : current,
+          current?.kind === 'ready' ? { ...current, enabled: result.enabled } : current,
         )
         setStatusOverride(
           result.permissionDenied
@@ -247,20 +241,12 @@ export function App({ api = chromePopupApi }: AppProps) {
 
     void runMutation(async () => {
       try {
-        const result = await api.setFeatures(
+        await api.setFeatures(
           state.tab,
           state.hostname,
           state.enabled,
           previousFeatures,
           nextFeatures,
-        )
-        setState((current) =>
-          current?.kind === 'ready'
-            ? {
-                ...current,
-                detectionResults: result.detectionResults ?? current.detectionResults,
-              }
-            : current,
         )
         setStatusOverride(null)
       } catch {

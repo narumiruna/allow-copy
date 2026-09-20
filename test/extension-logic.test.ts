@@ -24,16 +24,13 @@ describe('extension URL and error logic', () => {
 
   it('classifies popup injection errors', () => {
     expect(classifyPopupInjectionError(new Error('Cannot access contents of url'))).toEqual({
-      success: false,
       error: 'Cannot access this page',
       shouldLog: false,
     })
     expect(classifyPopupInjectionError(new Error('Script already injected duplicate'))).toEqual({
-      success: true,
       shouldLog: false,
     })
     expect(classifyPopupInjectionError(new Error('Boom'))).toEqual({
-      success: false,
       error: 'Boom',
       shouldLog: true,
     })

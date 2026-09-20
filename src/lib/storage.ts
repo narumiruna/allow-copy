@@ -57,15 +57,6 @@ async function getRawSites(storageArea: StorageAreaLike): Promise<Record<string,
   return isRecord(result[SITES_KEY]) ? result[SITES_KEY] : {}
 }
 
-export async function getAllSites(
-  storageArea: StorageAreaLike = getSyncStorage(),
-): Promise<Record<string, SiteConfig>> {
-  const sites = await getRawSites(storageArea)
-  return Object.fromEntries(
-    Object.entries(sites).map(([hostname, config]) => [hostname, normalizeSiteConfig(config)]),
-  )
-}
-
 export async function getSiteConfig(
   hostname: string,
   storageArea: StorageAreaLike = getSyncStorage(),
