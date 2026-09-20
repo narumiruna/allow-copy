@@ -51,6 +51,40 @@ describe('site storage', () => {
     expect(storage.getSites()['example.com']).toMatchObject({ futureField: { keep: true } })
   })
 
+  it('preserves and normalizes the current record in an enabled-only disable write', async () => {
+    const storage = createStorageArea({
+      'example.com': {
+        enabled: true,
+        futureField: 'keep',
+        features: { cursor: false, contextMenu: 'yes', futureFeature: 'keep' },
+      },
+      'other.example': true,
+    })
+
+    await setSiteConfig('example.com', { enabled: false }, storage.area)
+
+    expect(storage.getSites()).toEqual({
+      'example.com': {
+        enabled: false,
+        futureField: 'keep',
+        features: { ...DEFAULT_FEATURES, cursor: false, futureFeature: 'keep' },
+      },
+      'other.example': true,
+    })
+  })
+
+  it.each([true, false, null, []])(
+    'disables legacy or malformed record %j with feature defaults',
+    async (record) => {
+      const storage = createStorageArea({ 'example.com': record })
+      await setSiteConfig('example.com', { enabled: false }, storage.area)
+      expect(storage.getSites()['example.com']).toEqual({
+        enabled: false,
+        features: DEFAULT_FEATURES,
+      })
+    },
+  )
+
   it('keeps enabled state unchanged when updating features', async () => {
     const storage = createStorageArea({
       'example.com': { enabled: false, features: DEFAULT_FEATURES },

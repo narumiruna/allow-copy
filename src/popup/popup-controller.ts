@@ -224,8 +224,7 @@ export const chromePopupApi: PopupApi = {
     }
 
     try {
-      const savedFeatures = enabled ? features : (await getSiteConfig(hostname)).features
-      await setSiteConfig(hostname, { enabled, features: savedFeatures })
+      await setSiteConfig(hostname, enabled ? { enabled, features } : { enabled })
       await sendSiteMessage(tab.id, {
         action: 'toggleSite',
         hostname,

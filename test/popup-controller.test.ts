@@ -94,6 +94,22 @@ describe('popup controller mutations', () => {
     expect(await getSiteConfig(hostname)).toEqual({ enabled: false, features })
   })
 
+  it('preserves the features seen by the disable write when sync changes between reads', async () => {
+    const { sync } = setup({ enabled: true, features })
+    let latestFeatures = features
+    // Each read sees a newer sync update, including the read used to merge the write.
+    sync.get.mockImplementation(async () => {
+      latestFeatures = { ...latestFeatures, cursor: !latestFeatures.cursor }
+      return { sites: { [hostname]: { enabled: true, features: latestFeatures } } }
+    })
+
+    await chromePopupApi.setEnabled(tab, hostname, false, DEFAULT_FEATURES)
+
+    expect(sync.snapshot()).toEqual({
+      sites: { [hostname]: { enabled: false, features: latestFeatures } },
+    })
+  })
+
   it('clears pending state without saving or messaging when access is denied', async () => {
     const { request, sync, sendMessage } = setup()
     request.mockResolvedValue(false)
