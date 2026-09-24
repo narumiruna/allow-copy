@@ -15,7 +15,7 @@ Allow Copy is a privacy-first Chrome extension that restores copying, text selec
 
 Requirements:
 
-- Node.js 22.22.2 or newer.
+- Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` (22.22.2+ within Node 22, 24.15.0+ within Node 24, or Node 26+).
 - npm.
 
 ```bash
