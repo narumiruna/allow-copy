@@ -15,31 +15,24 @@ interface ExtensionFixtures {
   popupPath: string
 }
 
-async function createTestExtension(): Promise<{
-  extensionRoot: string
-  popupPath: string
-}> {
+async function createTestExtension(): Promise<string> {
   const extensionRoot = await mkdtemp(path.join(os.tmpdir(), 'allow-copy-extension-'))
   await cp(builtExtensionRoot, extensionRoot, { recursive: true })
 
   const manifestPath = path.join(extensionRoot, 'manifest.json')
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
     host_permissions?: string[]
-    action?: { default_popup?: string }
   }
   manifest.host_permissions = TEST_HOST_PERMISSIONS
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
 
-  return {
-    extensionRoot,
-    popupPath: manifest.action?.default_popup ?? 'action/index.html',
-  }
+  return extensionRoot
 }
 
 export const test = base.extend<ExtensionFixtures>({
   context: async ({ browserName: _browserName }, use) => {
     const userDataDir = await mkdtemp(path.join(os.tmpdir(), 'allow-copy-playwright-'))
-    const { extensionRoot } = await createTestExtension()
+    const extensionRoot = await createTestExtension()
     const context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chromium',
       args: [`--disable-extensions-except=${extensionRoot}`, `--load-extension=${extensionRoot}`],

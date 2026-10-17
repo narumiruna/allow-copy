@@ -1,24 +1,6 @@
+import type { DetectionResults, FeatureSettings, SiteConfig } from '../types/extension'
+
 export function installContentScript(): void {
-  type FeatureSettings = {
-    textSelection: boolean
-    contextMenu: boolean
-    copyPaste: boolean
-    cursor: boolean
-  }
-
-  type DetectionResults = {
-    cssRestrictions: {
-      userSelect: boolean
-      pointerEvents: boolean
-      cursor: boolean
-    }
-    jsRestrictions: {
-      contextmenu: boolean
-      selectstart: boolean
-      copy: boolean
-    }
-  }
-
   type DocumentEventProperty = 'oncontextmenu' | 'onselectstart' | 'oncopy' | 'oncut' | 'onpaste'
 
   type RegisteredListener = {
@@ -85,10 +67,7 @@ export function installContentScript(): void {
     }
   }
 
-  function normalizeSiteConfig(value: unknown): {
-    enabled: boolean
-    features: FeatureSettings
-  } {
+  function normalizeSiteConfig(value: unknown): SiteConfig {
     if (typeof value === 'boolean') {
       return { enabled: value, features: { ...DEFAULT_FEATURES } }
     }
@@ -103,10 +82,7 @@ export function installContentScript(): void {
     }
   }
 
-  async function loadSiteConfig(): Promise<{
-    enabled: boolean
-    features: FeatureSettings
-  }> {
+  async function loadSiteConfig(): Promise<SiteConfig> {
     try {
       const result = await chrome.storage.sync.get(['sites'])
       const sites = isRecord(result.sites) ? result.sites : {}

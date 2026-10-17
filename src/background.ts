@@ -15,15 +15,13 @@ async function isSiteEnabledForUrl(url: string): Promise<boolean> {
   return hasPersistentSiteAccessForUrl(url)
 }
 
-async function injectContentScript(tabId: number): Promise<boolean> {
+async function injectContentScript(tabId: number): Promise<void> {
   try {
     await executeInstallContentScript(tabId)
-    return true
   } catch (error) {
     if (shouldLogBackgroundInjectionError(error)) {
       console.error('Unexpected error injecting content script:', error)
     }
-    return false
   }
 }
 
@@ -96,7 +94,9 @@ chrome.permissions.onAdded.addListener((permissions) => {
 chrome.webNavigation.onCommitted.addListener((details) => {
   if (details.frameId !== 0 || !parseSupportedHostname(details.url)) return
   void isSiteEnabledForUrl(details.url)
-    .then((enabled) => (enabled ? injectContentScript(details.tabId) : false))
+    .then(async (enabled) => {
+      if (enabled) await injectContentScript(details.tabId)
+    })
     .catch((error: unknown) => {
       console.error('Error handling navigation:', error)
     })

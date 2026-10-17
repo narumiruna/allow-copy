@@ -9,15 +9,17 @@ async function setup(enabled = false) {
   const sync = createStorageArea({ sites: { [hostname]: { enabled, features } } })
   const session = createStorageArea({ pendingSiteEnable: { [hostname]: { hostname, features } } })
   const executeScript = vi.fn(async () => [])
+  const contains = vi.fn(async () => true)
   const setBadgeText = vi.fn(async () => undefined)
   const setBadgeBackgroundColor = vi.fn(async () => undefined)
   let installed: (() => void) | undefined
   let permissionAdded: ((permissions: { origins?: string[] }) => void) | undefined
+  let committed: ((details: { frameId: number; tabId: number; url: string }) => void) | undefined
 
   vi.stubGlobal('chrome', {
     action: { setBadgeText, setBadgeBackgroundColor },
     permissions: {
-      contains: vi.fn(async () => true),
+      contains,
       onAdded: {
         addListener: (listener: typeof permissionAdded) => {
           permissionAdded = listener
@@ -39,14 +41,24 @@ async function setup(enabled = false) {
       onUpdated: { addListener: vi.fn() },
       query: vi.fn(async () => [{ id: 7, url: `https://${hostname}/article` }]),
     },
-    webNavigation: { onCommitted: { addListener: vi.fn() } },
+    webNavigation: {
+      onCommitted: {
+        addListener: (listener: typeof committed) => {
+          committed = listener
+        },
+      },
+    },
   })
   await import('../src/background')
-  if (!installed || !permissionAdded) throw new Error('Background listeners were not registered')
+  if (!installed || !permissionAdded || !committed) {
+    throw new Error('Background listeners were not registered')
+  }
   return {
     sync,
     session,
     executeScript,
+    contains,
+    committed,
     setBadgeText,
     setBadgeBackgroundColor,
     installed,
@@ -55,9 +67,75 @@ async function setup(enabled = false) {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   vi.resetModules()
+})
+
+describe('background navigation', () => {
+  const navigation = { frameId: 0, tabId: 7, url: `https://${hostname}/article` }
+
+  it('injects into an enabled permitted site after navigation', async () => {
+    const { committed, executeScript } = await setup(true)
+    vi.useFakeTimers()
+
+    committed(navigation)
+    await vi.runAllTimersAsync()
+
+    expect(executeScript).toHaveBeenCalledOnce()
+    expect(executeScript).toHaveBeenCalledWith(
+      expect.objectContaining({ target: { tabId: 7, allFrames: true }, injectImmediately: true }),
+    )
+  })
+
+  it('does not inject into a disabled site', async () => {
+    const { committed, executeScript, contains } = await setup(false)
+    vi.useFakeTimers()
+
+    committed(navigation)
+    await vi.runAllTimersAsync()
+
+    expect(contains).not.toHaveBeenCalled()
+    expect(executeScript).not.toHaveBeenCalled()
+  })
+
+  it('does not inject without persistent site access', async () => {
+    const { committed, executeScript, contains } = await setup(true)
+    contains.mockResolvedValue(false)
+    vi.useFakeTimers()
+
+    committed(navigation)
+    await vi.runAllTimersAsync()
+
+    expect(contains).toHaveBeenCalledWith({ origins: [`https://${hostname}/*`] })
+    expect(executeScript).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { message: 'Cannot access page', shouldLog: false },
+    { message: 'No tab with id: 7', shouldLog: false },
+    { message: 'Unexpected injection failure', shouldLog: true },
+  ])('handles injection failure: $message', async ({ message, shouldLog }) => {
+    const { committed, executeScript } = await setup(true)
+    const error = new Error(message)
+    executeScript.mockRejectedValueOnce(error)
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.useFakeTimers()
+
+    committed(navigation)
+    await vi.runAllTimersAsync()
+
+    expect(executeScript).toHaveBeenCalledOnce()
+    if (shouldLog) {
+      expect(log).toHaveBeenCalledExactlyOnceWith(
+        'Unexpected error injecting content script:',
+        error,
+      )
+    } else {
+      expect(log).not.toHaveBeenCalled()
+    }
+  })
 })
 
 describe('background reconciliation', () => {
